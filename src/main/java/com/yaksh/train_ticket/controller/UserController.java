@@ -36,6 +36,6 @@ public class UserController {
     @PostMapping("/signupUser")
     public ResponseDataDTO signupUser(@RequestParam  String userName,@RequestParam String password){
         User user = new User(UUID.randomUUID().toString(),userName,password, userServiceUtil.hashPassword(password),new ArrayList<>());
-        return service.signupUSer(user);
+        return service.signupUser(user);
     }
 }
