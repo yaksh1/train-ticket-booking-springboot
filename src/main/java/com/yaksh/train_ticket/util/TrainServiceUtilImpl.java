@@ -21,16 +21,4 @@ public class TrainServiceUtilImpl implements TrainServiceUtil {
         return sourceIndx!= -1 && destinationIndx!=-1 && sourceIndx < destinationIndx;
     }
 
-    @Override
-    public boolean seatsAvailable(List<Integer> seatsOfRowChosen, List<Integer> seatsIndex) {
-        // pointer in list of seats to be booked
-        int pointerInSeatsIndexList=0;
-
-        // seeing if all seats can be booked by checking if the pointer can reach the end of seatsIndex list
-        while( pointerInSeatsIndexList < seatsIndex.size() &&
-                seatsOfRowChosen.get(seatsIndex.get(pointerInSeatsIndexList)-1)!=1){
-            pointerInSeatsIndexList++;
-        }
-        return pointerInSeatsIndexList == seatsIndex.size();
-    }
 }

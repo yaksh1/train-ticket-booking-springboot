@@ -31,9 +31,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     private User loggedInUser;
     private final UserRepository userRepository;
     private final UserServiceUtil userServiceUtil;
-
-    private final TrainRepository trainRepository;
-    private final TrainServiceUtil trainServiceUtil;
+    private final TrainService trainService;
 
     @Override
     // Setter method to assign logged-in user
@@ -98,21 +96,16 @@ public class UserBookingServiceImpl implements UserBookingService {
         if(loggedInUser==null){
             return new ResponseDataDTO(false,"Please log in to book the ticket ",null);
         }
-        // get the train with the prn
-        Train train = trainRepository.findTrainByPRN(trainPrn);
-        // train not found
-        if(train==null){
-            return new ResponseDataDTO(false,"Train does not exist with prn: "+trainPrn,null);
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,row);
+        if(!canBeBooked.isStatus()){
+            return canBeBooked;
         }
-
-        if(row<1 || row > train.getSeats().get(0).size()){
-            return new ResponseDataDTO(false,"Invalid row number",null);
-        }
+        Train train =(Train) canBeBooked.getData();
         // list of seats in the selected row
         List<Integer> seatsOfRowChosen = train.getSeats().get(row-1);
 
         // Are seats available
-        if(!trainServiceUtil.seatsAvailable(seatsOfRowChosen,seatsIndex)){
+        if(!trainService.areSeatsAvailable(seatsOfRowChosen,seatsIndex).isStatus()){
             return new ResponseDataDTO(false,"Seats not available",null);
         }
 
@@ -120,7 +113,7 @@ public class UserBookingServiceImpl implements UserBookingService {
         seatsIndex.forEach(seat-> seatsOfRowChosen.set(seat-1,1));
 
         try{
-            trainRepository.saveTrainToFile();
+            trainService.saveTrainToFile();
             Ticket ticket = new Ticket(
                     UUID.randomUUID().toString(),
                     loggedInUser.getUserId(),
@@ -137,7 +130,6 @@ public class UserBookingServiceImpl implements UserBookingService {
             return new ResponseDataDTO(false,"Ticket Not Booked",e.getMessage());
         }
     }
-
 
 
     @Override
@@ -164,4 +156,6 @@ public class UserBookingServiceImpl implements UserBookingService {
             return new ResponseDataDTO(false,e.getMessage(),null);
         }
     }
+
+
 }
