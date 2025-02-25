@@ -6,10 +6,13 @@ import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 public interface UserBookingService {
     void setLoggedInUser(User user);
     User getLoggedInUser();
+    List<User> getUserList();
     ResponseDataDTO loginUser(String userName, String Password);
     ResponseDataDTO signupUSer(User user);
     ResponseDataDTO bookTicket(Train train,String source,String destination);

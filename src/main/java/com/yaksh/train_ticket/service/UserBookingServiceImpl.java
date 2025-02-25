@@ -42,6 +42,12 @@ public class UserBookingServiceImpl implements UserBookingService {
         return this.user;
     }
 
+    @Override
+    public List<User> getUserList() {
+        return userList;
+    }
+
+
     @PostConstruct  // Runs after the bean is initialized
     public void init() {
         try {
@@ -71,10 +77,7 @@ public class UserBookingServiceImpl implements UserBookingService {
 
     @Override
     public ResponseDataDTO signupUSer(User user) {
-        Optional<User> userFound = userList.stream()
-                .filter(user1 ->
-                        user1.getUserName().equals(user.getUserName()))
-                .findFirst();
+        Optional<User> userFound = userServiceUtil.findUserByName(user.getUserName());
         if(userFound.isPresent()){
             return new ResponseDataDTO(false,"User Already Exists",userFound.get());
         }
