@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface TrainService {
     ResponseDataDTO searchTrains(String source, String destination);
-    ResponseDataDTO areSeatsAvailable(List<Integer> seatsOfRowChosen,List<Integer> seatsIndex);
-    ResponseDataDTO canBeBooked(String trainPrn,int row);
+    ResponseDataDTO areSeatsAvailable(Train train,int numberOfSeatsToBeBooked);
+    ResponseDataDTO canBeBooked(String trainPrn);
 
     boolean saveTrainToFile() throws IOException;
 }

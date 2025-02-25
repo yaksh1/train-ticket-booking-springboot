@@ -12,10 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,16 +47,14 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
-    public ResponseDataDTO canBeBooked(String trainPrn,int row){
+    public ResponseDataDTO canBeBooked(String trainPrn){
         // get the train with the prn
         Train train = trainRepository.findTrainByPRN(trainPrn);
         // train not found
         if(train==null){
             return new ResponseDataDTO(false,"Train does not exist with prn: "+trainPrn,null);
         }
-        if(row<1 || row > train.getSeats().size()){
-            return new ResponseDataDTO(false,"Invalid row number",null);
-        }
+
         return new ResponseDataDTO(true,"Can be Booked",train);
     }
 
@@ -69,15 +64,26 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
-    public ResponseDataDTO areSeatsAvailable(List<Integer> seatsOfRowChosen,List<Integer> seatsIndex){
-        // pointer in list of seats to be booked
-        int pointerInSeatsIndexList=0;
+    public ResponseDataDTO areSeatsAvailable(Train train,int numberOfSeatsToBeBooked){
+        List<List<Integer>> allSeats = train.getSeats();
+        List<int[]> availableSeats = new ArrayList<>();
 
-        // seeing if all seats can be booked by checking if the pointer can reach the end of seatsIndex list
-        while( pointerInSeatsIndexList < seatsIndex.size() &&
-                seatsOfRowChosen.get(seatsIndex.get(pointerInSeatsIndexList)-1)!=1){
-            pointerInSeatsIndexList++;
+        int totalSeats = allSeats.size() * allSeats.get(0).size(); // Total number of seats
+        int foundSeats = 0;
+
+        for (int index = 0; index < totalSeats; index++) {
+            int row = index / allSeats.get(0).size(); // Row number
+            int col = index % allSeats.get(0).size(); // Column number
+
+            if (allSeats.get(row).get(col) == 0) { // If seat is available
+                availableSeats.add(new int[]{row, col});
+                foundSeats++;
+
+                if (foundSeats == numberOfSeatsToBeBooked) {
+                    return new ResponseDataDTO(true, "Seats found", availableSeats);
+                }
+            }
         }
-        return new ResponseDataDTO(pointerInSeatsIndexList==seatsIndex.size(),"Invalid row number",null);
+        return new ResponseDataDTO(false, "Not enough seats available", null);
     }
 }

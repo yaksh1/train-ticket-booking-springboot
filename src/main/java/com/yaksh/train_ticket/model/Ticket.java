@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,6 +22,8 @@ public class Ticket {
     private String dateOfTravel;
     private String source;
     private String destination;
+
+    private List<int[]> bookedSeatsIndex;
 
     public String getTicketInfo(){
         return String.format("Ticket ID: %s belongs to User with ID: %s from %s to %s on %s",ticketId,userId,source,destination,dateOfTravel);

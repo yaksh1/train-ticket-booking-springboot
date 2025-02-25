@@ -35,8 +35,8 @@ public class UserController {
         return service.signupUser(userName,password);
     }
     @PostMapping("/bookTicket")
-    public ResponseDataDTO bookTicket(@RequestParam  String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam String dateOfTravel, @RequestParam List<Integer> seatsIndex, @RequestParam int row){
-        return service.bookTicket(trainPrn,source,destination,dateOfTravel,seatsIndex,row);
+    public ResponseDataDTO bookTicket(@RequestParam  String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam String dateOfTravel, @RequestParam int numberOfSeatsToBeBooked){
+        return service.bookTicket(trainPrn,source,destination,dateOfTravel,numberOfSeatsToBeBooked);
     }
     @GetMapping("/fetchTickets")
     public ResponseDataDTO fetchAllTickets(){

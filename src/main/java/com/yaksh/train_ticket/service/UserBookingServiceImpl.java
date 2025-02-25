@@ -90,27 +90,36 @@ public class UserBookingServiceImpl implements UserBookingService {
         }
     }
 
+    // OLD LOGIC: user entered list of seat indexes where he wanted to book the seats,
+    // and in was checking if that indexes are available in the train seats
+    // but in real world we just enter the number of seats and seats get assigned to us based
+    // on availability
+
+    // Thus NEW LOGIC: user enters number of seats he wants to book
+    // , and we book those seats even if they are in different rows
     @Override
-    public ResponseDataDTO bookTicket(String trainPrn, String source, String destination,String dateOfTravel,List<Integer> seatsIndex,int row) {
+    public ResponseDataDTO bookTicket(String trainPrn, String source, String destination,String dateOfTravel,int numberOfSeatsToBeBooked) {
         // if user is not logged in then false
         if(loggedInUser==null){
             return new ResponseDataDTO(false,"Please log in to book the ticket ",null);
         }
-        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,row);
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn);
         if(!canBeBooked.isStatus()){
             return canBeBooked;
         }
         Train train =(Train) canBeBooked.getData();
-        // list of seats in the selected row
-        List<Integer> seatsOfRowChosen = train.getSeats().get(row-1);
 
+        ResponseDataDTO availableSeatsDTO =trainService.areSeatsAvailable(train,numberOfSeatsToBeBooked);
         // Are seats available
-        if(!trainService.areSeatsAvailable(seatsOfRowChosen,seatsIndex).isStatus()){
-            return new ResponseDataDTO(false,"Seats not available",null);
+        if(!availableSeatsDTO.isStatus()){
+            return new ResponseDataDTO(false,availableSeatsDTO.getMessage(),null);
         }
 
-        // book seats
-        seatsIndex.forEach(seat-> seatsOfRowChosen.set(seat-1,1));
+        List<List<Integer>> allSeats = train.getSeats();
+        List<int[]> availableSeatsList =(List<int[]>) availableSeatsDTO.getData();
+
+        // book seats (get row and col from availableSeatsLists and make it 1)
+        availableSeatsList.forEach(seat -> allSeats.get(seat[0]).set(seat[1],1));
 
         try{
             trainService.saveTrainToFile();
@@ -120,7 +129,8 @@ public class UserBookingServiceImpl implements UserBookingService {
                     train,
                     dateOfTravel,
                     source,
-                    destination
+                    destination,
+                    availableSeatsList
             );
 
             loggedInUser.getTicketsBooked().add(ticket);
