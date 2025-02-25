@@ -16,8 +16,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,7 +34,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     // Setter method to assign logged-in user
     public void setLoggedInUser(User user) {
         this.loggedInUser = user;
-        System.out.println("User logged in: " + user.getUserName());
+        log.info("User logged in as: " + user.getUserName());
     }
 
     @Override
@@ -58,25 +60,33 @@ public class UserBookingServiceImpl implements UserBookingService {
 
     @Override
     public ResponseDataDTO loginUser(String userName,String password) {
-        Optional<User> userFound = userServiceUtil.findUserByName(userName);
+        Optional<User> userFound = userRepository.findUserByName(userName);
         // if user is present and password is also matching with hashed password of found user -> login successful
-        return (userFound.isPresent() && userServiceUtil.checkPassword(password,userFound.get().getHashedPassword())) ?
-                new ResponseDataDTO(true,"User Found",userFound.get()) :
-                new ResponseDataDTO(false,"User Not Found",null);
+        if(userFound.isPresent()){
+            if(userServiceUtil.checkPassword(password,userFound.get().getHashedPassword())){
+                new ResponseDataDTO(true,"User Found",userFound.get());
+            }else{
+                // user is found but password not correct
+                new ResponseDataDTO(false,"Password Incorrect",null);
+            }
+        }
+        return new ResponseDataDTO(false,"User Not Found",null);
     }
 
     @Override
-    public ResponseDataDTO signupUser(User user) {
-        Optional<User> userFound = userServiceUtil.findUserByName(user.getUserName());
+    public ResponseDataDTO signupUser(String userName,String password) {
+        Optional<User> userFound = userRepository.findUserByName(userName);
         if(userFound.isPresent()){
             return new ResponseDataDTO(false,"User Already Exists",userFound.get());
         }
         try{
+            User user = new User(UUID.randomUUID().toString(),userName,password, userServiceUtil.hashPassword(password),new ArrayList<>());
             boolean userAdded = userRepository.addUser(user);
             return userAdded ? new ResponseDataDTO(true,"User Saved in the file",user):
                     new ResponseDataDTO(false,"User could not be Saved in the file",user);
 
         }catch (Exception e){
+            log.error("User could not be saved: {}", e.getMessage());
             return new ResponseDataDTO(false,"User Could not be Saved",e.getMessage());
         }
     }

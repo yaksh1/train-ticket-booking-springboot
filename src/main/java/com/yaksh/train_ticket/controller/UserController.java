@@ -20,8 +20,6 @@ import java.util.UUID;
 public class UserController {
 
     @Autowired
-    private UserServiceUtil userServiceUtil;
-    @Autowired
     private UserBookingService service;
 
     @PostMapping("/loginUser")
@@ -35,7 +33,6 @@ public class UserController {
 
     @PostMapping("/signupUser")
     public ResponseDataDTO signupUser(@RequestParam  String userName,@RequestParam String password){
-        User user = new User(UUID.randomUUID().toString(),userName,password, userServiceUtil.hashPassword(password),new ArrayList<>());
-        return service.signupUser(user);
+        return service.signupUser(userName,password);
     }
 }

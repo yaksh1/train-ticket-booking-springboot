@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Repository
@@ -53,5 +54,13 @@ public class UserRepositoryImpl implements UserRepository{
     public boolean addUser(User userToAdd) throws IOException{
         userList.add(userToAdd);
         return saveUserToFile();
+    }
+
+    @Override
+    public Optional<User> findUserByName(String userName) {
+        return userList.stream()
+                .filter(user1 ->
+                        user1.getUserName().equals(userName))
+                .findFirst();
     }
 }

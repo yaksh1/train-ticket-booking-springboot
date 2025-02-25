@@ -11,8 +11,8 @@ import java.util.Optional;
 @Service
 public class UserServiceUtilImpl implements UserServiceUtil{
 
-    @Autowired
-    private UserBookingService userBookingService;
+
+
 
     @Override
     public String hashPassword(String password) {
@@ -24,11 +24,5 @@ public class UserServiceUtilImpl implements UserServiceUtil{
         return BCrypt.checkpw(password,hashedPassword);
     }
 
-    @Override
-    public Optional<User> findUserByName(String userName) {
-        return userBookingService.getUserList().stream()
-                .filter(user1 ->
-                        user1.getUserName().equals(userName))
-                .findFirst();
-    }
+
 }

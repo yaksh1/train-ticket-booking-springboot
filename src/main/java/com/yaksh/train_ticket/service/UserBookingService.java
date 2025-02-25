@@ -14,7 +14,7 @@ public interface UserBookingService {
     User getLoggedInUser();
     List<User> getUserList();
     ResponseDataDTO loginUser(String userName, String Password);
-    ResponseDataDTO signupUser(User user);
+    ResponseDataDTO signupUser(String userName,String password);
     ResponseDataDTO bookTicket(Train train,String source,String destination);
     ResponseDataDTO FetchAllTickets();
     ResponseDataDTO cancelTicket(Ticket ticket);
