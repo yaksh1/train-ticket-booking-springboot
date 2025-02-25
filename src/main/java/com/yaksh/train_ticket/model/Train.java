@@ -22,9 +22,9 @@ public class Train {
     private String trainName;
     private List<List<Integer>> seats;
     private Map<String, String> stationArrivalTimes;
-    private Set<String> stations;
+    private List<String> stations;
 
     public String getTrainInfo(){
-        return String.format("Train ID: %s: ",prn);
+        return String.format("Train ID: %s",prn);
     }
 }

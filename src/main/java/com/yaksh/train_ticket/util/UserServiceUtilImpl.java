@@ -12,8 +12,6 @@ import java.util.Optional;
 public class UserServiceUtilImpl implements UserServiceUtil{
 
 
-
-
     @Override
     public String hashPassword(String password) {
          return BCrypt.hashpw(password,BCrypt.gensalt());
