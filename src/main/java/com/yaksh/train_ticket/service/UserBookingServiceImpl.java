@@ -9,6 +9,7 @@ import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.TrainRepository;
 import com.yaksh.train_ticket.repository.UserRepository;
 import com.yaksh.train_ticket.util.HelperFunctions;
+import com.yaksh.train_ticket.util.TrainServiceUtil;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     private final UserServiceUtil userServiceUtil;
 
     private final TrainRepository trainRepository;
+    private final TrainServiceUtil trainServiceUtil;
 
     @Override
     // Setter method to assign logged-in user
@@ -102,55 +104,41 @@ public class UserBookingServiceImpl implements UserBookingService {
         if(train==null){
             return new ResponseDataDTO(false,"Train does not exist with prn: "+trainPrn,null);
         }
-        // seats matrix of the selected train
-        List<List<Integer>> seats = train.getSeats();
-        // pointer to point to the row selected
-        int i=0;
-        while(i<seats.size() && i!=row-1){
-            i++;
-        }
-        // pointer in list of seats to be booked
-        int pointerInSeatsIndexList=0;
-        // list of seats in the selected row
-        List<Integer> seatsOfRowChosen = seats.get(i);
 
-        // seeing if all seats can be booked by checking if the pointer can reach the end of seatsIndex list
-        while( pointerInSeatsIndexList < seatsIndex.size() &&
-                seatsOfRowChosen.get(seatsIndex.get(pointerInSeatsIndexList)-1)!=1){
-                pointerInSeatsIndexList++;
+        if(row<1 || row > train.getSeats().get(0).size()){
+            return new ResponseDataDTO(false,"Invalid row number",null);
         }
-        // if it reaches the end book the seat (make it 1)
-        if(pointerInSeatsIndexList == seatsIndex.size()){
-            for (int j = 0; j < seatsIndex.size(); j++) {
-                seatsOfRowChosen.set(seatsIndex.get(j)-1,1);
-            }
-        }else{
+        // list of seats in the selected row
+        List<Integer> seatsOfRowChosen = train.getSeats().get(row-1);
+
+        // Are seats available
+        if(!trainServiceUtil.seatsAvailable(seatsOfRowChosen,seatsIndex)){
             return new ResponseDataDTO(false,"Seats not available",null);
         }
+
+        // book seats
+        seatsIndex.forEach(seat-> seatsOfRowChosen.set(seat-1,1));
+
         try{
             trainRepository.saveTrainToFile();
-        }catch (Exception e){
-            return new ResponseDataDTO(false,"Ticket Not Booked",null);
-        }
+            Ticket ticket = new Ticket(
+                    UUID.randomUUID().toString(),
+                    loggedInUser.getUserId(),
+                    train,
+                    dateOfTravel,
+                    source,
+                    destination
+            );
 
-        Ticket ticket = new Ticket(
-                UUID.randomUUID().toString(),
-                loggedInUser.getUserId(),
-                train,
-                dateOfTravel,
-                source,
-                destination
-        );
-
-        loggedInUser.getTicketsBooked().add(ticket);
-
-        try{
+            loggedInUser.getTicketsBooked().add(ticket);
             userRepository.saveUserToFile();
-        }catch(Exception e){
-            return new ResponseDataDTO(false,"Ticket Not Booked",null);
+            return new ResponseDataDTO(true,"Ticket Booked with ID: "+ ticket.getTicketId(),ticket);
+        }catch (Exception e){
+            return new ResponseDataDTO(false,"Ticket Not Booked",e.getMessage());
         }
-        return new ResponseDataDTO(true,"Ticket Booked with ID: "+ ticket.getTicketId(),ticket);
     }
+
+
 
     @Override
     public ResponseDataDTO fetchAllTickets() {
