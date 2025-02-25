@@ -30,7 +30,10 @@ public class TrainServiceImpl implements TrainService {
             log.error("Error loading trains: {}", e.getMessage());
         }
     }
-
+    @Override
+    public boolean saveTrainToFile() throws IOException {
+        return trainRepository.saveTrainToFile();
+    }
 
     // Project Assumption: Every train is available every day at same time
     @Override
@@ -58,10 +61,7 @@ public class TrainServiceImpl implements TrainService {
         return new ResponseDataDTO(true,"Can be Booked",train);
     }
 
-    @Override
-    public boolean saveTrainToFile() throws IOException {
-        return trainRepository.saveTrainToFile();
-    }
+
 
     @Override
     public ResponseDataDTO areSeatsAvailable(Train train,int numberOfSeatsToBeBooked){
@@ -70,7 +70,9 @@ public class TrainServiceImpl implements TrainService {
 
         int totalSeats = allSeats.size() * allSeats.get(0).size(); // Total number of seats
         int foundSeats = 0;
-
+        if(numberOfSeatsToBeBooked>totalSeats){
+            return new ResponseDataDTO(false, "Not enough seats available", null);
+        }
         for (int index = 0; index < totalSeats; index++) {
             int row = index / allSeats.get(0).size(); // Row number
             int col = index % allSeats.get(0).size(); // Column number
