@@ -18,7 +18,12 @@ public class Ticket {
     private String ticketId;
     private String userId;
     private Train train;
-    private Date dateOfTravel;
+    private String dateOfTravel;
     private String source;
     private String destination;
+
+    public String getTicketInfo(){
+        return String.format("Ticket ID: %s belongs to User with ID: %s from %s to %s on %s",ticketId,userId,source,destination,dateOfTravel);
+    }
+
 }

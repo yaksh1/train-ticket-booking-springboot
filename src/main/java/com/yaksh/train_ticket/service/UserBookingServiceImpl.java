@@ -7,6 +7,7 @@ import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.UserRepository;
+import com.yaksh.train_ticket.util.HelperFunctions;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,17 +59,13 @@ public class UserBookingServiceImpl implements UserBookingService {
 
     @Override
     public ResponseDataDTO loginUser(String userName,String password) {
-        Optional<User> userFound = userRepository.findUserByName(userName);
-        // if user is present and password is also matching with hashed password of found user -> login successful
-        if(userFound.isPresent()){
-            if(userServiceUtil.checkPassword(password,userFound.get().getHashedPassword())){
-                new ResponseDataDTO(true,"User Found",userFound.get());
-            }else{
-                // user is found but password not correct
-                new ResponseDataDTO(false,"Password Incorrect",null);
-            }
-        }
-        return new ResponseDataDTO(false,"User Not Found",null);
+        return userRepository.findUserByName(userName)
+                // checks if user entered correct password
+                .map(user -> userServiceUtil.checkPassword(password, user.getHashedPassword())
+                        ? new ResponseDataDTO(true, "User Found", user)
+                        // user is found but password not correct
+                        : new ResponseDataDTO(false, "Password Incorrect", null))
+                .orElse(new ResponseDataDTO(false, "User Not Found", null));
     }
 
     @Override
@@ -92,17 +87,45 @@ public class UserBookingServiceImpl implements UserBookingService {
     }
 
     @Override
-    public ResponseDataDTO bookTicket(Train train, String source, String destination) {
-        return null;
+    public ResponseDataDTO bookTicket(String trainPrn, String source, String destination,String dateOfTravel,int numberOfSeats){
+        Ticket ticket = new Ticket(
+                UUID.randomUUID().toString(),
+                loggedInUser.getUserId(),
+                new Train(),
+                dateOfTravel,
+                source,
+                destination
+        );
+        loggedInUser.getTicketsBooked().add(ticket);
+        try{
+            userRepository.saveUserToFile();
+        }catch(Exception e){
+            return new ResponseDataDTO(false,"Ticket Not Booked",null);
+        }
+        return new ResponseDataDTO(true,"Ticket Booked with ID: "+ ticket.getTicketId(),ticket);
     }
 
     @Override
-    public ResponseDataDTO FetchAllTickets() {
-        return null;
+    public ResponseDataDTO fetchAllTickets() {
+        return new ResponseDataDTO(true,"Tickets fetched",loggedInUser.getTicketsBooked());
     }
 
+
     @Override
-    public ResponseDataDTO cancelTicket(Ticket ticket) {
-        return null;
+    public ResponseDataDTO cancelTicket(String IdOfTicketToCancel) {
+        try{
+
+            Iterator<Ticket> iterator = loggedInUser.getTicketsBooked().iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().getTicketId().equals(IdOfTicketToCancel)) {
+                    iterator.remove();
+                    userRepository.saveUserToFile();
+                    return new ResponseDataDTO(true,String.format("Ticket ID: %s has been deleted.",IdOfTicketToCancel));
+                }
+            }
+            return new ResponseDataDTO(false,String.format("Ticket ID: %s not found",IdOfTicketToCancel),null);
+        }catch (Exception e){
+            return new ResponseDataDTO(false,e.getMessage(),null);
+        }
     }
 }

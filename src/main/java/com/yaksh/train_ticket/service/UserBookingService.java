@@ -6,6 +6,7 @@ import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -15,7 +16,7 @@ public interface UserBookingService {
     List<User> getUserList();
     ResponseDataDTO loginUser(String userName, String Password);
     ResponseDataDTO signupUser(String userName,String password);
-    ResponseDataDTO bookTicket(Train train,String source,String destination);
-    ResponseDataDTO FetchAllTickets();
-    ResponseDataDTO cancelTicket(Ticket ticket);
+    ResponseDataDTO bookTicket(String trainPrn, String source, String destination,String dateOfTravel,int numberOfSeats);
+    ResponseDataDTO fetchAllTickets();
+    ResponseDataDTO cancelTicket(String IdOfTicketToCancel);
 }

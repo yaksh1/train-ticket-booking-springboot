@@ -21,6 +21,10 @@ public class Train {
     private String prn;
     private String trainName;
     private List<List<Integer>> seats;
-    private Map<String, Time> stationArrivalTimes;
+    private Map<String, String> stationArrivalTimes;
     private Set<String> stations;
+
+    public String getTrainInfo(){
+        return String.format("Train ID: %s: ",prn);
+    }
 }

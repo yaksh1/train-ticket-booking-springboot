@@ -7,10 +7,7 @@ import com.yaksh.train_ticket.util.UserServiceUtil;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -25,6 +22,7 @@ public class UserController {
     @PostMapping("/loginUser")
     public ResponseDataDTO loginUser(@RequestParam  String userName,@RequestParam String password){
         ResponseDataDTO responseDataDTO = service.loginUser(userName,password);
+
         if(responseDataDTO.isStatus()){
             service.setLoggedInUser((User) responseDataDTO.getData());
         }
@@ -34,5 +32,19 @@ public class UserController {
     @PostMapping("/signupUser")
     public ResponseDataDTO signupUser(@RequestParam  String userName,@RequestParam String password){
         return service.signupUser(userName,password);
+    }
+
+    @PostMapping("/bookTicket")
+    public ResponseDataDTO bookTicket(@RequestParam  String userName,@RequestParam String password){
+        return service.bookTicket("1234","Surat","Pune","08-03-25",4);
+    }
+    @GetMapping("/fetchTickets")
+    public ResponseDataDTO fetchAllTickets(){
+        return service.fetchAllTickets();
+    }
+
+    @PostMapping("/cancelTicket")
+    public ResponseDataDTO cancelTicket(@RequestParam String ticketId){
+        return service.cancelTicket(ticketId);
     }
 }
