@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -35,8 +36,8 @@ public class UserController {
     }
 
     @PostMapping("/bookTicket")
-    public ResponseDataDTO bookTicket(@RequestParam  String userName,@RequestParam String password){
-        return service.bookTicket("1234","Surat","Pune","08-03-25",4);
+    public ResponseDataDTO bookTicket(@RequestParam  String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam String dateOfTravel, @RequestParam List<Integer> seatsIndex,@RequestParam int row){
+        return service.bookTicket(trainPrn,source,destination,dateOfTravel,seatsIndex,row);
     }
     @GetMapping("/fetchTickets")
     public ResponseDataDTO fetchAllTickets(){

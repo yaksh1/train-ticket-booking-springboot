@@ -50,5 +50,10 @@ public class TrainRepositoryImpl implements TrainRepository{
         }
     }
 
+    @Override
+    public Train findTrainByPRN(String prn) {
+        return trainList.stream().filter(train -> train.getPrn().equalsIgnoreCase(prn)).findFirst().orElse(null);
+    }
+
 
 }
