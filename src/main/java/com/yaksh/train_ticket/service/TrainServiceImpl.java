@@ -1,6 +1,8 @@
 package com.yaksh.train_ticket.service;
 
+import com.yaksh.train_ticket.DTO.CommonResponsesDTOs;
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
+import com.yaksh.train_ticket.enums.ResponseStatus;
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
@@ -40,7 +42,7 @@ public class TrainServiceImpl implements TrainService {
         try{
             return trainRepository.addTrain(newTrain);
         }catch(Exception e){
-            return new ResponseDataDTO(false,"Failed to add the train in the file",e.getMessage());
+            return CommonResponsesDTOs.trainNotAddedToFIleDTO(e.getMessage());
         }
     }
 
@@ -49,7 +51,7 @@ public class TrainServiceImpl implements TrainService {
         try{
             return trainRepository.addMultipleTrains(newTrains);
         }catch(Exception e){
-            return new ResponseDataDTO(false,"Failed to add the trains in the file",e.getMessage());
+            return CommonResponsesDTOs.trainNotAddedToFIleDTO(e.getMessage());
         }
     }
 
@@ -58,7 +60,7 @@ public class TrainServiceImpl implements TrainService {
         try{
             return trainRepository.updateTrain(updatedTrain);
         }catch(Exception e){
-            return new ResponseDataDTO(false,"Failed to update the train in the file",e.getMessage());
+            return new ResponseDataDTO(false,ResponseStatus.TRAIN_UPDATING_FAILED,"Error while updating train: "+e.getMessage());
         }
     }
 
@@ -82,9 +84,8 @@ public class TrainServiceImpl implements TrainService {
         Train train = trainRepository.findTrainByPRN(trainPrn);
         // train not found
         if(train==null){
-            return new ResponseDataDTO(false,"Train does not exist with prn: "+trainPrn,null);
+            return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
         }
-
         return new ResponseDataDTO(true,"Can be Booked",train);
     }
 
@@ -97,8 +98,8 @@ public class TrainServiceImpl implements TrainService {
 
         int totalSeats = allSeats.size() * allSeats.get(0).size(); // Total number of seats
         int foundSeats = 0;
-        if(numberOfSeatsToBeBooked>totalSeats){
-            return new ResponseDataDTO(false, "Not enough seats available", null);
+            if(numberOfSeatsToBeBooked>totalSeats){
+            return CommonResponsesDTOs.notEnoughSeatsDTO();
         }
         for (int index = 0; index < totalSeats; index++) {
             int row = index / allSeats.get(0).size(); // Row number
@@ -113,6 +114,6 @@ public class TrainServiceImpl implements TrainService {
                 }
             }
         }
-        return new ResponseDataDTO(false, "Not enough seats available", null);
+        return CommonResponsesDTOs.notEnoughSeatsDTO();
     }
 }

@@ -4,6 +4,7 @@ import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.service.UserBookingService;
 import com.yaksh.train_ticket.util.UserServiceUtil;
+import lombok.NonNull;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -35,7 +36,7 @@ public class UserController {
         return service.signupUser(userName,password);
     }
     @PostMapping("/bookTicket")
-    public ResponseDataDTO bookTicket(@RequestParam  String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam String dateOfTravel, @RequestParam int numberOfSeatsToBeBooked){
+    public ResponseDataDTO bookTicket(@RequestParam String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam String dateOfTravel, @RequestParam int numberOfSeatsToBeBooked){
         return service.bookTicket(trainPrn,source,destination,dateOfTravel,numberOfSeatsToBeBooked);
     }
     @GetMapping("/fetchTickets")
