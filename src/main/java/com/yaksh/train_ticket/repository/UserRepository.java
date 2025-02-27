@@ -1,5 +1,6 @@
 package com.yaksh.train_ticket.repository;
 
+import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.User;
 
 import java.io.IOException;

@@ -12,4 +12,6 @@ public interface TrainService {
     ResponseDataDTO canBeBooked(String trainPrn);
 
     boolean saveTrainToFile() throws IOException;
+
+
 }

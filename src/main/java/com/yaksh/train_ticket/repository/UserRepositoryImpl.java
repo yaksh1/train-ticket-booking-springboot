@@ -2,6 +2,7 @@ package com.yaksh.train_ticket.repository;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -63,4 +64,6 @@ public class UserRepositoryImpl implements UserRepository{
                         user1.getUserName().equals(userName))
                 .findFirst();
     }
+
+
 }

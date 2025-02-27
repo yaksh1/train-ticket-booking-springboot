@@ -148,7 +148,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     }
 
 
-    // TO DO: remove the booked seats from train
+    // TO DO: remove the booked seats from trains.json
     @Override
     public ResponseDataDTO cancelTicket(String IdOfTicketToCancel) {
         try{
@@ -165,6 +165,19 @@ public class UserBookingServiceImpl implements UserBookingService {
         }catch (Exception e){
             return new ResponseDataDTO(false,e.getMessage(),null);
         }
+    }
+
+    @Override
+    public ResponseDataDTO fetchTicketById(String IdOfTicketToFind) {
+        Ticket ticketFound = loggedInUser.getTicketsBooked()
+                .stream()
+                .filter(ticket -> ticket.getTicketId().equalsIgnoreCase(IdOfTicketToFind))
+                .findFirst()
+                .orElse(null);
+        if(ticketFound==null){
+            return new ResponseDataDTO(false,"Ticket not found",null);
+        }
+        return new ResponseDataDTO(true,"Ticket found",ticketFound);
     }
 
 

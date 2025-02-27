@@ -19,4 +19,8 @@ public interface UserBookingService {
     ResponseDataDTO bookTicket(String trainPrn, String source, String destination,String dateOfTravel,int numberOfSeatsToBeBooked) ;
     ResponseDataDTO fetchAllTickets();
     ResponseDataDTO cancelTicket(String IdOfTicketToCancel);
+    ResponseDataDTO fetchTicketById(String IdOfTicketToFind);
+
+    // also update booking logic with dates (can book at different dates with date specified train seats)
+
 }

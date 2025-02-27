@@ -47,4 +47,8 @@ public class UserController {
     public ResponseDataDTO cancelTicket(@RequestParam String ticketId){
         return service.cancelTicket(ticketId);
     }
+    @GetMapping("/fetchTicketById")
+    public ResponseDataDTO fetchTicketById(@RequestParam String ticketId){
+        return service.fetchTicketById(ticketId);
+    }
 }
