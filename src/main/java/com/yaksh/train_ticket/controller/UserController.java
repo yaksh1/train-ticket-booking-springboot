@@ -5,6 +5,7 @@ import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.service.UserBookingService;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/user")
+@Slf4j
 public class UserController {
 
     @Autowired
@@ -46,6 +48,8 @@ public class UserController {
 
     @PostMapping("/cancelTicket")
     public ResponseDataDTO cancelTicket(@RequestParam String ticketId){
+
+        log.info("in controller");
         return service.cancelTicket(ticketId);
     }
     @GetMapping("/fetchTicketById")

@@ -156,25 +156,49 @@ public class UserBookingServiceImpl implements UserBookingService {
     // TO DO: remove the booked seats from trains.json
     @Override
     public ResponseDataDTO cancelTicket(String IdOfTicketToCancel) {
-        // if user is not logged in then false
-        if(loggedInUser==null){
+        log.info("Inside cancelTicket method");
+
+        // If user is not logged in, return an error
+        if (loggedInUser == null) {
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
-        try{
 
+        try {
             Iterator<Ticket> iterator = loggedInUser.getTicketsBooked().iterator();
+
             while (iterator.hasNext()) {
-                if (iterator.next().getTicketId().equals(IdOfTicketToCancel)) {
-                    iterator.remove();
-                    userRepository.saveUserToFile();
-                    return new ResponseDataDTO(true,String.format("Ticket ID: %s has been deleted.",IdOfTicketToCancel));
+                Ticket ticket = iterator.next(); // Store the ticket once
+
+                if (ticket.getTicketId().equals(IdOfTicketToCancel)) {
+                    log.info("Found ticket: {}", ticket);
+
+                    // Get the train from the ticket and free up the seats
+                    Train train = ticket.getTrain();
+                    log.info("Associated train: {}", train);
+
+                    // Iterate over the booked seats and mark them as available (0)
+                    List<int[]> bookedSeats = ticket.getBookedSeatsIndex();
+                    log.info("Booked seats before freeing: {}", bookedSeats);
+                    bookedSeats.forEach(seat->train.getSeats().get(seat[0]).set(seat[1], 0));
+
+                    log.info("Seats successfully freed, saving data...");
+
+                    trainService.updateTrain(train);  // Ensure the train state is updated
+                    trainService.saveTrainToFile();   // Persist train data
+                    iterator.remove();                // Remove the ticket from the user's booked list
+                    userRepository.saveUserToFile();  // Persist user data
+
+                    return new ResponseDataDTO(true, String.format("Ticket ID: %s has been deleted.", IdOfTicketToCancel));
                 }
             }
+
             return CommonResponsesDTOs.ticketNotFoundDTO(IdOfTicketToCancel);
-        }catch (Exception e){
-            return new ResponseDataDTO(false,ResponseStatus.TICKET_NOT_CANCELLED,"Error while canceling ticket: "+e.getMessage());
+        } catch (Exception e) {
+            log.error("Error while canceling ticket: ", e);
+            return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_CANCELLED, "Error while canceling ticket: " + e.getMessage());
         }
     }
+
 
     @Override
     public ResponseDataDTO fetchTicketById(String IdOfTicketToFind) {
