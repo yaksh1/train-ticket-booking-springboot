@@ -2,6 +2,7 @@ package com.yaksh.train_ticket.repository;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Repository;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.OptionalInt;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Repository
@@ -53,6 +56,43 @@ public class TrainRepositoryImpl implements TrainRepository{
     @Override
     public Train findTrainByPRN(String prn) {
         return trainList.stream().filter(train -> train.getPrn().equalsIgnoreCase(prn)).findFirst().orElse(null);
+    }
+
+    @Override
+    public ResponseDataDTO addTrain(Train newTrain) throws IOException {
+        Train doesTrainExist = findTrainByPRN(newTrain.getPrn());
+        if(doesTrainExist!=null){
+            return updateTrain(newTrain);
+        }
+        trainList.add(newTrain);
+        saveTrainToFile();
+        return new ResponseDataDTO(true,"Train added in the file",newTrain);
+    }
+
+    @Override
+    public ResponseDataDTO addMultipleTrains(List<Train> newTrains) throws IOException {
+       for(Train newTrain : newTrains){
+           addTrain(newTrain);
+       }
+       return new ResponseDataDTO(true,"New trains added in the file",newTrains);
+    }
+
+    @Override
+    public ResponseDataDTO updateTrain(Train newTrain) throws IOException{
+        // Find the index of the train with the same trainId
+        OptionalInt index = IntStream.range(0, trainList.size())
+                .filter(i -> trainList.get(i).getPrn().equalsIgnoreCase(newTrain.getPrn()))
+                .findFirst();
+
+        if (index.isPresent()) {
+            // If found, replace the existing train with the updated one
+            trainList.set(index.getAsInt(), newTrain);
+            saveTrainToFile();
+            return new ResponseDataDTO(true,"Train updated successfully",newTrain);
+        } else {
+            // If not found, treat it as adding a new train
+            return addTrain(newTrain);
+        }
     }
 
 

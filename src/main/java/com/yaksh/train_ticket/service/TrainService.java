@@ -13,5 +13,10 @@ public interface TrainService {
 
     boolean saveTrainToFile() throws IOException;
 
+    ResponseDataDTO addTrain(Train newTrain);
+    ResponseDataDTO addMultipleTrains(List<Train> newTrains);
+
+    ResponseDataDTO updateTrain(Train updatedTrain);
+
 
 }

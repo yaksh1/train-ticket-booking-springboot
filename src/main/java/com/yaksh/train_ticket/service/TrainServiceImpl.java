@@ -35,6 +35,33 @@ public class TrainServiceImpl implements TrainService {
         return trainRepository.saveTrainToFile();
     }
 
+    @Override
+    public ResponseDataDTO addTrain(Train newTrain) {
+        try{
+            return trainRepository.addTrain(newTrain);
+        }catch(Exception e){
+            return new ResponseDataDTO(false,"Failed to add the train in the file",e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseDataDTO addMultipleTrains(List<Train> newTrains) {
+        try{
+            return trainRepository.addMultipleTrains(newTrains);
+        }catch(Exception e){
+            return new ResponseDataDTO(false,"Failed to add the trains in the file",e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseDataDTO updateTrain(Train updatedTrain) {
+        try{
+            return trainRepository.updateTrain(updatedTrain);
+        }catch(Exception e){
+            return new ResponseDataDTO(false,"Failed to update the train in the file",e.getMessage());
+        }
+    }
+
     // Project Assumption: Every train is available every day at same time
     @Override
     public ResponseDataDTO searchTrains(String source, String destination) {

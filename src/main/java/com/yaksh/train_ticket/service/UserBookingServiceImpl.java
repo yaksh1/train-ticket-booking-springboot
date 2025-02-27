@@ -144,6 +144,10 @@ public class UserBookingServiceImpl implements UserBookingService {
 
     @Override
     public ResponseDataDTO fetchAllTickets() {
+        // if user is not logged in then false
+        if(loggedInUser==null){
+            return new ResponseDataDTO(false,"Please log in to book the ticket ",null);
+        }
         return new ResponseDataDTO(true,"Tickets fetched",loggedInUser.getTicketsBooked());
     }
 
@@ -151,6 +155,10 @@ public class UserBookingServiceImpl implements UserBookingService {
     // TO DO: remove the booked seats from trains.json
     @Override
     public ResponseDataDTO cancelTicket(String IdOfTicketToCancel) {
+        // if user is not logged in then false
+        if(loggedInUser==null){
+            return new ResponseDataDTO(false,"Please log in to book the ticket ",null);
+        }
         try{
 
             Iterator<Ticket> iterator = loggedInUser.getTicketsBooked().iterator();
@@ -169,6 +177,10 @@ public class UserBookingServiceImpl implements UserBookingService {
 
     @Override
     public ResponseDataDTO fetchTicketById(String IdOfTicketToFind) {
+        // if user is not logged in then false
+        if(loggedInUser==null){
+            return new ResponseDataDTO(false,"Please log in to book the ticket ",null);
+        }
         Ticket ticketFound = loggedInUser.getTicketsBooked()
                 .stream()
                 .filter(ticket -> ticket.getTicketId().equalsIgnoreCase(IdOfTicketToFind))
@@ -179,6 +191,4 @@ public class UserBookingServiceImpl implements UserBookingService {
         }
         return new ResponseDataDTO(true,"Ticket found",ticketFound);
     }
-
-
 }
