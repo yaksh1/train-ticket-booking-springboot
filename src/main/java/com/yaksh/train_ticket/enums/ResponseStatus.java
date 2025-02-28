@@ -16,6 +16,6 @@ public enum ResponseStatus {
     // tickets
     TICKET_NOT_FOUND,
     TICKET_NOT_BOOKED,
-    TICKET_NOT_CANCELLED,
+    TICKET_NOT_CANCELLED, INVALID_DATA,
 
 }
