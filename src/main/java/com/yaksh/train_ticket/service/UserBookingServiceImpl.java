@@ -6,6 +6,7 @@ import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.TicketRepositoryV2;
+import com.yaksh.train_ticket.repository.TrainRepositoryV2;
 import com.yaksh.train_ticket.repository.UserRepository;
 import com.yaksh.train_ticket.repository.UserRepositoryV2;
 import com.yaksh.train_ticket.util.UserServiceUtil;
@@ -21,12 +22,12 @@ import java.util.*;
 @Slf4j
 public class UserBookingServiceImpl implements UserBookingService {
     private User loggedInUser;
-    private final UserRepository userRepository;
     private final UserServiceUtil userServiceUtil;
     private final TrainService trainService;
 
     private final UserRepositoryV2 userRepositoryV2;
-    private final TicketRepositoryV2 ticketRepositoryV2;
+    private final TicketService ticketService;
+
 
     @Override
     // Setter method to assign logged-in user
@@ -54,8 +55,8 @@ public class UserBookingServiceImpl implements UserBookingService {
     public void init() {
         try {
             log.info("Initializing user repository data");
-            userRepository.loadUsers();
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             log.error("Error loading users: {}", e.getMessage(), e);
         }
     }
@@ -63,15 +64,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     @Override
     public ResponseDataDTO loginUser(String userName, String password) {
         log.info("Login attempt for user: {}", userName);
-        userRepositoryV2.findByUserName(userName)
-                .map(user -> userServiceUtil.checkPassword(password, user.getHashedPassword())
-                        ? new ResponseDataDTO(true, "User Found", user)
-                        // user is found but password not correct
-                        : new ResponseDataDTO(false, ResponseStatus.PASSWORD_INCORRECT, "Password Incorrect"))
-                .orElse(new ResponseDataDTO(false, ResponseStatus.USER_NOT_FOUND, "User Not Found"));
-//TO DELETE
-                return userRepository.findUserByName(userName)
-                // checks if user entered correct password
+        return userRepositoryV2.findByUserName(userName)
                 .map(user -> userServiceUtil.checkPassword(password, user.getHashedPassword())
                         ? new ResponseDataDTO(true, "User Found", user)
                         // user is found but password not correct
@@ -92,7 +85,7 @@ public class UserBookingServiceImpl implements UserBookingService {
         try {
             User user = new User(UUID.randomUUID().toString(), userName,
                     userServiceUtil.hashPassword(password), new ArrayList<>());
-            boolean userAdded = userRepository.addUser(user);
+            // save user
             User savedUser = userRepositoryV2.save(user);
 
             return new ResponseDataDTO(true, "User Saved in the collection", savedUser);
@@ -152,7 +145,7 @@ public class UserBookingServiceImpl implements UserBookingService {
         availableSeatsList.forEach(seat -> allSeats.get(seat.get(0)).set(seat.get(1), 1));
 
         try {
-            trainService.saveTrainToFile();
+            trainService.updateTrain(train);
             Ticket ticket = new Ticket(
                     UUID.randomUUID().toString(),
                     loggedInUser.getUserId(),
@@ -162,13 +155,9 @@ public class UserBookingServiceImpl implements UserBookingService {
                     destination,
                     availableSeatsList
             );
-
             loggedInUser.getTicketsBooked().add(ticket);
-
-            userRepository.saveUserToFile();
-            ticketRepositoryV2.save(ticket);
+            ticketService.saveTicket(ticket);
             userRepositoryV2.save(loggedInUser);
-            log.info("Ticket booked successfully - Ticket ID: {}", ticket.getTicketId());
             return new ResponseDataDTO(true, "Ticket Booked with ID: " + ticket.getTicketId(), ticket);
         } catch (Exception e) {
             log.error("Error while booking ticket: {}", e.getMessage(), e);
@@ -189,7 +178,7 @@ public class UserBookingServiceImpl implements UserBookingService {
 
 
     @Override
-    public ResponseDataDTO cancelTicket(String IdOfTicketToCancel) {
+    public ResponseDataDTO cancelTicket(String idOfTicketToCancel) {
 
         // If user is not logged in, return an error
         if (loggedInUser == null) {
@@ -203,11 +192,12 @@ public class UserBookingServiceImpl implements UserBookingService {
             while (iterator.hasNext()) {
                 Ticket ticket = iterator.next(); // Store the ticket once
 
-                if (ticket.getTicketId().equals(IdOfTicketToCancel)) {
+                if (ticket.getTicketId().equals(idOfTicketToCancel)) {
                     log.info("Found ticket: {}", ticket);
 
                     // Get the train from the ticket and free up the seats
-                    Train train = ticket.getTrain();
+                    String bookedTrainPrn = ticket.getTrain().getPrn();
+                    Train train = trainService.findTrainByPrn(bookedTrainPrn).get();
                     log.info("Associated train: {}", train);
 
                     // Iterate over the booked seats and mark them as available (0)
@@ -216,19 +206,19 @@ public class UserBookingServiceImpl implements UserBookingService {
                     bookedSeats.forEach(seat -> train.getSeats().get(seat.get(0)).set(seat.get(1), 0));
 
                     log.info("Seats successfully freed, saving data...");
-
+                    log.info("Train seats after freeing: {}",train.getSeats());
                     trainService.updateTrain(train);  // Ensure the train state is updated
-                    trainService.saveTrainToFile();   // Persist train data
-                    iterator.remove();                // Remove the ticket from the user's booked list
-                    userRepository.saveUserToFile();  // Persist user data
 
+                    ticketService.deleteTicketById(idOfTicketToCancel);
+                    iterator.remove();// Remove the ticket from the user's booked list
+                    userRepositoryV2.save(loggedInUser);
 
-                    return new ResponseDataDTO(true, String.format("Ticket ID: %s has been deleted.", IdOfTicketToCancel));
+                    return new ResponseDataDTO(true, String.format("Ticket ID: %s has been deleted.", idOfTicketToCancel));
                 }
             }
 
-            log.warn("Ticket not found: {}", IdOfTicketToCancel);
-            return CommonResponsesDTOs.ticketNotFoundDTO(IdOfTicketToCancel);
+            log.warn("Ticket not found: {}", idOfTicketToCancel);
+            return CommonResponsesDTOs.ticketNotFoundDTO(idOfTicketToCancel);
         } catch (Exception e) {
             log.error("Error while canceling ticket: {}", e.getMessage(), e);
             return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_CANCELLED, "Error while canceling ticket: " + e.getMessage());
@@ -236,21 +226,24 @@ public class UserBookingServiceImpl implements UserBookingService {
     }
 
     @Override
-    public ResponseDataDTO fetchTicketById(String IdOfTicketToFind) {
-        log.info("Fetching ticket by ID: {}", IdOfTicketToFind);
+    public ResponseDataDTO fetchTicketById(String idOfTicketToFind) {
+        log.info("Fetching ticket by ID: {}", idOfTicketToFind);
         // if user is not logged in then false
         if (loggedInUser == null) {
             log.warn("Unauthorized ticket fetch attempt - no logged in user");
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
-        Ticket ticketFound = loggedInUser.getTicketsBooked()
+        Ticket ticketFound1 = loggedInUser.getTicketsBooked()
                 .stream()
-                .filter(ticket -> ticket.getTicketId().equalsIgnoreCase(IdOfTicketToFind))
+                .filter(ticket -> ticket.getTicketId().equalsIgnoreCase(idOfTicketToFind))
                 .findFirst()
                 .orElse(null);
+
+        // NEW
+        Ticket ticketFound = ticketService.findTicketById(idOfTicketToFind).orElse(null);
         if (ticketFound == null) {
-            log.warn("Ticket not found: {}", IdOfTicketToFind);
-            return CommonResponsesDTOs.ticketNotFoundDTO(IdOfTicketToFind);
+            log.warn("Ticket not found: {}", idOfTicketToFind);
+            return CommonResponsesDTOs.ticketNotFoundDTO(idOfTicketToFind);
         }
         return new ResponseDataDTO(true, "Ticket found", ticketFound);
     }

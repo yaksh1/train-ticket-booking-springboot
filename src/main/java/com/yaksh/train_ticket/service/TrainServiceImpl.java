@@ -7,6 +7,7 @@ import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.TrainRepository;
+import com.yaksh.train_ticket.repository.TrainRepositoryV2;
 import com.yaksh.train_ticket.util.TrainServiceUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TrainServiceImpl implements TrainService {
     private final TrainRepository trainRepository;
+    private final TrainRepositoryV2 trainRepositoryV2;
     private final TrainServiceUtil trainServiceUtil;
 
     @PostConstruct
@@ -34,23 +36,13 @@ public class TrainServiceImpl implements TrainService {
         }
     }
 
-    @Override
-    public boolean saveTrainToFile() throws IOException {
-        log.info("Attempting to save trains to file");
-        boolean result = trainRepository.saveTrainToFile();
-        if (result) {
-            log.info("Trains successfully saved to file");
-        } else {
-            log.error("Failed to save trains to file");
-        }
-        return result;
-    }
 
     @Override
     public ResponseDataDTO addTrain(Train newTrain) {
         log.info("Attempting to add new train: {}", newTrain.getPrn());
         try {
             ResponseDataDTO response = trainRepository.addTrain(newTrain);
+            trainRepositoryV2.save(newTrain);
             log.info("Train added successfully: {}", newTrain.getPrn());
             return response;
         } catch (Exception e) {
@@ -76,6 +68,7 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO updateTrain(Train updatedTrain) {
         log.info("Attempting to update train: {}", updatedTrain.getPrn());
         try {
+            trainRepositoryV2.save(updatedTrain);
             ResponseDataDTO response = trainRepository.updateTrain(updatedTrain);
             log.info("Train updated successfully: {}", updatedTrain.getPrn());
             return response;
@@ -107,7 +100,7 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO canBeBooked(String trainPrn) {
         log.info("Checking if train can be booked: {}", trainPrn);
         // get the train with the prn
-        Train train = trainRepository.findTrainByPRN(trainPrn);
+        Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
 
         // train not found
         if (train == null) {
@@ -117,6 +110,11 @@ public class TrainServiceImpl implements TrainService {
 
         log.info("Train {} can be booked", trainPrn);
         return new ResponseDataDTO(true, "Can be Booked", train);
+    }
+
+    @Override
+    public Optional<Train> findTrainByPrn(String prn) {
+        return trainRepositoryV2.findById(prn);
     }
 
     @Override

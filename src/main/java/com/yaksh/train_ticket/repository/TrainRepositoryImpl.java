@@ -40,20 +40,6 @@ public class TrainRepositoryImpl implements TrainRepository{
     }
 
     @Override
-    public boolean saveTrainToFile() throws IOException {
-        File trainsFile = new File(TRAINS_PATH);
-        long initialSize = trainsFile.exists() ? trainsFile.length():0;
-        try{
-            objectMapper.writeValue(trainsFile,trainList);
-            long newSize = trainsFile.length();
-            return newSize>initialSize;
-        }catch (Exception e){
-            log.error("Error writing to file: {}", e.getMessage());
-            return false; // Return false if an exception occurs
-        }
-    }
-
-    @Override
     public Train findTrainByPRN(String prn) {
         return trainList.stream().filter(train -> train.getPrn().equalsIgnoreCase(prn)).findFirst().orElse(null);
     }
@@ -65,7 +51,7 @@ public class TrainRepositoryImpl implements TrainRepository{
             return updateTrain(newTrain);
         }
         trainList.add(newTrain);
-        saveTrainToFile();
+
         return new ResponseDataDTO(true,"Train added in the file",newTrain);
     }
 
@@ -87,7 +73,7 @@ public class TrainRepositoryImpl implements TrainRepository{
         if (index.isPresent()) {
             // If found, replace the existing train with the updated one
             trainList.set(index.getAsInt(), newTrain);
-            saveTrainToFile();
+
             return new ResponseDataDTO(true,"Train updated successfully",newTrain);
         } else {
             // If not found, treat it as adding a new train

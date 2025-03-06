@@ -9,7 +9,6 @@ import java.util.List;
 public interface TrainRepository {
     List<Train> getTrainsList();
     void loadTrains() throws IOException;
-    boolean saveTrainToFile() throws IOException;
 
     Train findTrainByPRN(String prn);
 
