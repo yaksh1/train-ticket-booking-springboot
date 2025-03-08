@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface TrainService {
     ResponseDataDTO searchTrains(String source, String destination);
     ResponseDataDTO areSeatsAvailable(Train train,int numberOfSeatsToBeBooked);
-    ResponseDataDTO canBeBooked(String trainPrn);
+    ResponseDataDTO canBeBooked(String trainPrn,String source,String destination);
     Optional<Train> findTrainByPrn(String prn);
 
     ResponseDataDTO addTrain(Train newTrain);

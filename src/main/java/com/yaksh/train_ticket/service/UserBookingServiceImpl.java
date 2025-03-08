@@ -98,16 +98,20 @@ public class UserBookingServiceImpl implements UserBookingService {
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
 
-        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn);
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,source,destination);
+        // if train cannot be booked then return false
         if (!canBeBooked.isStatus()) {
             log.warn("Booking failed for train {}: {}", trainPrn, canBeBooked.getMessage());
             return canBeBooked;
         }
 
+        //get train data
         Train train = (Train) canBeBooked.getData();
 
-        ResponseDataDTO availableSeatsDTO = trainService.areSeatsAvailable(train, numberOfSeatsToBeBooked);
         // Are seats available
+        ResponseDataDTO availableSeatsDTO = trainService.areSeatsAvailable(train, numberOfSeatsToBeBooked);
+
+        // if seats are not available then return
         if (!availableSeatsDTO.isStatus()) {
             log.warn("Not enough seats available in train {}: {}", trainPrn, availableSeatsDTO.getMessage());
             return availableSeatsDTO;
@@ -129,7 +133,7 @@ public class UserBookingServiceImpl implements UserBookingService {
         availableSeatsList.forEach(seat -> allSeats.get(seat.get(0)).set(seat.get(1), 1));
 
         try {
-            trainService.updateTrain(train);
+
             Ticket ticket = new Ticket(
                     UUID.randomUUID().toString(),
                     loggedInUser.getUserId(),
@@ -139,9 +143,18 @@ public class UserBookingServiceImpl implements UserBookingService {
                     destination,
                     availableSeatsList
             );
+            // update the user ticket list
             loggedInUser.getTicketsBooked().add(ticket);
+            log.info("Updating logged in user ticket list");
+            // save ticket in the ticket database
             ticketService.saveTicket(ticket);
+            log.info("Saving ticket in the DB");
+            // save user in the user database
             userRepositoryV2.save(loggedInUser);
+            log.info("Saving user in the DB");
+            // update train in the train database
+            trainService.updateTrain(train);
+            log.info("updating train in the DB");
             return new ResponseDataDTO(true, "Ticket Booked with ID: " + ticket.getTicketId(), ticket);
         } catch (Exception e) {
             log.error("Error while booking ticket: {}", e.getMessage(), e);

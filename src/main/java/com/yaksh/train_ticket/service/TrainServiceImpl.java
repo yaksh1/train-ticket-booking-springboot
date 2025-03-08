@@ -81,7 +81,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
-    public ResponseDataDTO canBeBooked(String trainPrn) {
+    public ResponseDataDTO canBeBooked(String trainPrn,String source,String destination) {
         log.info("Checking if train can be booked: {}", trainPrn);
         // get the train with the prn
         Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
@@ -90,6 +90,10 @@ public class TrainServiceImpl implements TrainService {
         if (train == null) {
             log.warn("Train not found: {}", trainPrn);
             return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
+        }
+        boolean validTrain = trainServiceUtil.validTrain(source,destination,train);
+        if(!validTrain){
+            return new ResponseDataDTO(false, "Can not be Booked: Source and destination do not align with train data", train);
         }
 
         log.info("Train {} can be booked", trainPrn);
