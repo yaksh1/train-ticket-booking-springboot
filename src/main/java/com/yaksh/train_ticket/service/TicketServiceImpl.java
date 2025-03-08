@@ -1,12 +1,15 @@
 package com.yaksh.train_ticket.service;
 
+import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.repository.TicketRepositoryV2;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,5 +45,20 @@ public class TicketServiceImpl implements TicketService{
     @Override
     public void deleteTicketById(String idOfTicketToDelete) {
         ticketRepositoryV2.deleteById(idOfTicketToDelete);
+    }
+
+    @Override
+    public Ticket createNewTicket(String userId, String trainPrn, String dateOfTravel, String source, String destination, List<List<Integer>> availableSeatsList) {
+        Ticket ticket = new Ticket(
+                UUID.randomUUID().toString(),
+                userId,
+                trainPrn,
+                dateOfTravel,
+                source,
+                destination,
+                availableSeatsList
+        );
+        return saveTicket(ticket);
+
     }
 }

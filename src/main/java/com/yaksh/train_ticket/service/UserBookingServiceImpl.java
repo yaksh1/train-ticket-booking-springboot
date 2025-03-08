@@ -130,25 +130,18 @@ public class UserBookingServiceImpl implements UserBookingService {
 
 
         // book seats (get row and col from availableSeatsLists and make it 1)
-        availableSeatsList.forEach(seat -> allSeats.get(seat.get(0)).set(seat.get(1), 1));
+        trainService.bookSeats(availableSeatsList,allSeats);
 
         try {
-
-            Ticket ticket = new Ticket(
-                    UUID.randomUUID().toString(),
-                    loggedInUser.getUserId(),
-                    train.getPrn(),
-                    dateOfTravel,
-                    source,
-                    destination,
-                    availableSeatsList
-            );
+            // save ticket in the ticket database
+            log.info("Saving ticket in the DB");
+            Ticket ticket = ticketService.createNewTicket(loggedInUser.getUserId(),train.getPrn(),dateOfTravel,source,destination,availableSeatsList);
+            if(ticket==null){
+                return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_BOOKED, "Error while booking ticket: not saved in the DB");
+            }
             // update the user ticket list
             loggedInUser.getTicketsBooked().add(ticket);
             log.info("Updating logged in user ticket list");
-            // save ticket in the ticket database
-            ticketService.saveTicket(ticket);
-            log.info("Saving ticket in the DB");
             // save user in the user database
             userRepositoryV2.save(loggedInUser);
             log.info("Saving user in the DB");
@@ -200,16 +193,21 @@ public class UserBookingServiceImpl implements UserBookingService {
                     // Iterate over the booked seats and mark them as available (0)
                     List<List<Integer>> bookedSeats = ticket.getBookedSeatsIndex();
                     log.info("Booked seats before freeing: {}", bookedSeats.toString());
-                    bookedSeats.forEach(seat -> train.getSeats().get(seat.get(0)).set(seat.get(1), 0));
-
+                    trainService.freeTheBookedSeats(bookedSeats,train);
                     log.info("Seats successfully freed, saving data...");
                     log.info("Train seats after freeing: {}",train.getSeats());
-                    trainService.updateTrain(train);  // Ensure the train state is updated
-
+                    // updating train in the DB
+                    trainService.updateTrain(train);
+                    log.info("Updating train in the DB");
+                    // deleting ticket from the DB
                     ticketService.deleteTicketById(idOfTicketToCancel);
-                    iterator.remove();// Remove the ticket from the user's booked list
+                    log.info("Deleting ticket in the DB");
+                    // Removing the ticket from the user's booked list
+                    iterator.remove();
+                    log.info("Updating logged in user ticket list");
+                    // updating user in the DB
                     userRepositoryV2.save(loggedInUser);
-
+                    log.info("Updating user in the DB");
                     return new ResponseDataDTO(true, String.format("Ticket ID: %s has been deleted.", idOfTicketToCancel));
                 }
             }

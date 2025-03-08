@@ -18,6 +18,10 @@ public interface TrainService {
 
     ResponseDataDTO updateTrain(Train updatedTrain);
 
+    boolean bookSeats(List<List<Integer>> seatsToBook,List<List<Integer>> allSeats);
+
+    void freeTheBookedSeats(List<List<Integer>> bookedSeats,Train train);
+
 
 
 }

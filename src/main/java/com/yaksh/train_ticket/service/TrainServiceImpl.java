@@ -62,6 +62,17 @@ public class TrainServiceImpl implements TrainService {
         }
     }
 
+    @Override
+    public boolean bookSeats(List<List<Integer>> seatsToBook,List<List<Integer>> allSeats) {
+        seatsToBook.forEach(seat -> allSeats.get(seat.get(0)).set(seat.get(1), 1));
+        return true;
+    }
+
+    @Override
+    public void freeTheBookedSeats(List<List<Integer>> bookedSeats, Train train) {
+        bookedSeats.forEach(seat -> train.getSeats().get(seat.get(0)).set(seat.get(1), 0));
+    }
+
     // Project Assumption: Every train is available every day at same time
     @Override
     public ResponseDataDTO searchTrains(String source, String destination) {
