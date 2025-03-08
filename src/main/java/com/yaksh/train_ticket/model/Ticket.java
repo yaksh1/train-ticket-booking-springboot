@@ -23,8 +23,8 @@ public class Ticket {
     @Id
     private String ticketId;
     private String userId;
-    @DocumentReference
-    private Train train;
+
+    private String trainId;
     private String dateOfTravel;
     private String source;
     private String destination;

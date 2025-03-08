@@ -3,18 +3,13 @@ package com.yaksh.train_ticket.service;
 import com.yaksh.train_ticket.DTO.CommonResponsesDTOs;
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.enums.ResponseStatus;
-import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
-import com.yaksh.train_ticket.model.User;
-import com.yaksh.train_ticket.repository.TrainRepository;
 import com.yaksh.train_ticket.repository.TrainRepositoryV2;
 import com.yaksh.train_ticket.util.TrainServiceUtil;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,32 +17,20 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class TrainServiceImpl implements TrainService {
-    private final TrainRepository trainRepository;
     private final TrainRepositoryV2 trainRepositoryV2;
     private final TrainServiceUtil trainServiceUtil;
-
-    @PostConstruct
-    public void init() {
-        try {
-            log.info("Initializing train repository data");
-            trainRepository.loadTrains();
-        } catch (Exception e) {
-            log.error("Error loading trains: {}", e.getMessage(), e);
-        }
-    }
 
 
     @Override
     public ResponseDataDTO addTrain(Train newTrain) {
         log.info("Attempting to add new train: {}", newTrain.getPrn());
         try {
-            ResponseDataDTO response = trainRepository.addTrain(newTrain);
             trainRepositoryV2.save(newTrain);
             log.info("Train added successfully: {}", newTrain.getPrn());
-            return response;
+            return new ResponseDataDTO(true,"Train added in the collection",newTrain);
         } catch (Exception e) {
             log.error("Error adding train {}: {}", newTrain.getPrn(), e.getMessage(), e);
-            return CommonResponsesDTOs.trainNotAddedToFIleDTO(e.getMessage());
+            return CommonResponsesDTOs.trainNotAddedToCollectionDTO(e.getMessage());
         }
     }
 
@@ -55,12 +38,13 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO addMultipleTrains(List<Train> newTrains) {
         log.info("Attempting to add {} trains", newTrains.size());
         try {
-            ResponseDataDTO response = trainRepository.addMultipleTrains(newTrains);
+
+            trainRepositoryV2.saveAll(newTrains);
             log.info("Successfully added {} trains", newTrains.size());
-            return response;
+            return new ResponseDataDTO(true,"Trains added in the collection",newTrains);
         } catch (Exception e) {
             log.error("Error adding multiple trains: {}", e.getMessage(), e);
-            return CommonResponsesDTOs.trainNotAddedToFIleDTO(e.getMessage());
+            return CommonResponsesDTOs.trainNotAddedToCollectionDTO(e.getMessage());
         }
     }
 
@@ -69,9 +53,9 @@ public class TrainServiceImpl implements TrainService {
         log.info("Attempting to update train: {}", updatedTrain.getPrn());
         try {
             trainRepositoryV2.save(updatedTrain);
-            ResponseDataDTO response = trainRepository.updateTrain(updatedTrain);
+
             log.info("Train updated successfully: {}", updatedTrain.getPrn());
-            return response;
+            return new ResponseDataDTO(true,"Train updated in the collection",updatedTrain);
         } catch (Exception e) {
             log.error("Error updating train {}: {}", updatedTrain.getPrn(), e.getMessage(), e);
             return new ResponseDataDTO(false, ResponseStatus.TRAIN_UPDATING_FAILED, "Error while updating train: " + e.getMessage());
@@ -82,7 +66,7 @@ public class TrainServiceImpl implements TrainService {
     @Override
     public ResponseDataDTO searchTrains(String source, String destination) {
         log.info("Searching trains from {} to {}", source, destination);
-        List<Train> trains = trainRepository.getTrainsList()
+        List<Train> trains = trainRepositoryV2.findAll()
                 .stream()
                 .filter(train -> trainServiceUtil.validTrain(source, destination, train))
                 .collect(Collectors.toList());

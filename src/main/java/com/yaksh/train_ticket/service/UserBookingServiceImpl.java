@@ -5,16 +5,11 @@ import com.yaksh.train_ticket.enums.ResponseStatus;
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
-import com.yaksh.train_ticket.repository.TicketRepositoryV2;
-import com.yaksh.train_ticket.repository.TrainRepositoryV2;
-import com.yaksh.train_ticket.repository.UserRepository;
 import com.yaksh.train_ticket.repository.UserRepositoryV2;
 import com.yaksh.train_ticket.util.UserServiceUtil;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -23,10 +18,12 @@ import java.util.*;
 public class UserBookingServiceImpl implements UserBookingService {
     private User loggedInUser;
     private final UserServiceUtil userServiceUtil;
-    private final TrainService trainService;
 
     private final UserRepositoryV2 userRepositoryV2;
+
+    // services
     private final TicketService ticketService;
+    private final TrainService trainService;
 
 
     @Override
@@ -47,18 +44,6 @@ public class UserBookingServiceImpl implements UserBookingService {
     public List<User> getUserList() {
         log.info("Retrieving all users from repository");
         return userRepositoryV2.findAll();
-//        return userRepository.getUserList();
-    }
-
-    @PostConstruct
-    // Runs after the bean is initialized
-    public void init() {
-        try {
-            log.info("Initializing user repository data");
-
-        } catch (Exception e) {
-            log.error("Error loading users: {}", e.getMessage(), e);
-        }
     }
 
     @Override
@@ -75,7 +60,6 @@ public class UserBookingServiceImpl implements UserBookingService {
     @Override
     public ResponseDataDTO signupUser(String userName, String password) {
         log.info("Signup attempt for user: {}", userName);
-//        Optional<User> userFound = userRepository.findUserByName(userName);
         Optional<User> userFound = userRepositoryV2.findByUserName(userName);
 
         if (userFound.isPresent()) {
@@ -90,9 +74,9 @@ public class UserBookingServiceImpl implements UserBookingService {
 
             return new ResponseDataDTO(true, "User Saved in the collection", savedUser);
         } catch (Exception e) {
-            log.error("Error while saving user in the file: {}", e.getMessage(), e);
-            return new ResponseDataDTO(false, ResponseStatus.USER_NOT_SAVED_IN_FILE,
-                    "Error while saving user in the file: " + e.getMessage());
+            log.error("Error while saving user in the collection: {}", e.getMessage(), e);
+            return new ResponseDataDTO(false, ResponseStatus.USER_NOT_SAVED_IN_COLLECTION,
+                    "Error while saving user in the collection: " + e.getMessage());
         }
     }
 
@@ -149,7 +133,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             Ticket ticket = new Ticket(
                     UUID.randomUUID().toString(),
                     loggedInUser.getUserId(),
-                    train,
+                    train.getPrn(),
                     dateOfTravel,
                     source,
                     destination,
@@ -196,7 +180,7 @@ public class UserBookingServiceImpl implements UserBookingService {
                     log.info("Found ticket: {}", ticket);
 
                     // Get the train from the ticket and free up the seats
-                    String bookedTrainPrn = ticket.getTrain().getPrn();
+                    String bookedTrainPrn = ticket.getTrainId();
                     Train train = trainService.findTrainByPrn(bookedTrainPrn).get();
                     log.info("Associated train: {}", train);
 
@@ -233,13 +217,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             log.warn("Unauthorized ticket fetch attempt - no logged in user");
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
-        Ticket ticketFound1 = loggedInUser.getTicketsBooked()
-                .stream()
-                .filter(ticket -> ticket.getTicketId().equalsIgnoreCase(idOfTicketToFind))
-                .findFirst()
-                .orElse(null);
 
-        // NEW
         Ticket ticketFound = ticketService.findTicketById(idOfTicketToFind).orElse(null);
         if (ticketFound == null) {
             log.warn("Ticket not found: {}", idOfTicketToFind);

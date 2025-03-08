@@ -17,8 +17,8 @@ public class CommonResponsesDTOs {
     public static ResponseDataDTO ticketNotFoundDTO(String ticketId){
         return new ResponseDataDTO(false,ResponseStatus.TICKET_NOT_FOUND,String.format("Ticket ID: %s not found",ticketId));
     }
-    public static ResponseDataDTO trainNotAddedToFIleDTO(String message){
-        return new ResponseDataDTO(false,ResponseStatus.TRAIN_NOT_SAVED_IN_FILE,"Error while saving the train: "+message);
+    public static ResponseDataDTO trainNotAddedToCollectionDTO(String message){
+        return new ResponseDataDTO(false,ResponseStatus.TRAIN_NOT_SAVED_IN_COLLECTION,"Error while saving the train: "+message);
     }
 
 
