@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,7 +49,7 @@ public class TicketServiceImpl implements TicketService{
     }
 
     @Override
-    public Ticket createNewTicket(String userId, String trainPrn, String dateOfTravel, String source, String destination, List<List<Integer>> availableSeatsList) {
+    public Ticket createNewTicket(String userId, String trainPrn, LocalDate dateOfTravel, String source, String destination, List<List<Integer>> availableSeatsList) {
         Ticket ticket = new Ticket(
                 UUID.randomUUID().toString(),
                 userId,

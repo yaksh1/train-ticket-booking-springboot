@@ -102,6 +102,7 @@ public class TrainServiceImpl implements TrainService {
             log.warn("Train not found: {}", trainPrn);
             return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
         }
+        // if source and destination align with train data
         boolean validTrain = trainServiceUtil.validTrain(source,destination,train);
         if(!validTrain){
             return new ResponseDataDTO(false, "Can not be Booked: Source and destination do not align with train data", train);

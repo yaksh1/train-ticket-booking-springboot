@@ -8,9 +8,11 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +40,7 @@ public class UserController {
         return service.signupUser(userName,password);
     }
     @PostMapping("/bookTicket")
-    public ResponseDataDTO bookTicket(@RequestParam String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam String dateOfTravel, @RequestParam int numberOfSeatsToBeBooked){
+    public ResponseDataDTO bookTicket(@RequestParam String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfTravel, @RequestParam int numberOfSeatsToBeBooked){
         return service.bookTicket(trainPrn,source,destination,dateOfTravel,numberOfSeatsToBeBooked);
     }
     @GetMapping("/fetchTickets")

@@ -10,6 +10,8 @@ import com.yaksh.train_ticket.util.UserServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -60,11 +62,12 @@ public class UserBookingServiceImpl implements UserBookingService {
     @Override
     public ResponseDataDTO signupUser(String userName, String password) {
         log.info("Signup attempt for user: {}", userName);
-        Optional<User> userFound = userRepositoryV2.findByUserName(userName);
-
+        // checking if user already exists with the username provided
+        Optional<User> userFound = userRepositoryV2.findByUserName(userName.toLowerCase());
+        // if user already exists return false
         if (userFound.isPresent()) {
             log.warn("Signup failed - user already exists: {}", userName);
-            return new ResponseDataDTO(false, ResponseStatus.USER_ALREADY_EXISTS, "User Already Exists", userFound.get());
+            return new ResponseDataDTO(false, ResponseStatus.USER_ALREADY_EXISTS, "User Already Exists");
         }
         try {
             User user = new User(UUID.randomUUID().toString(), userName,
@@ -89,7 +92,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     // , and we book those seats even if they are in different rows
     @Override
     public ResponseDataDTO bookTicket(String trainPrn, String source, String destination,
-                                      String dateOfTravel, int numberOfSeatsToBeBooked) {
+                                      LocalDate dateOfTravel, int numberOfSeatsToBeBooked) {
         log.info("Booking attempt - Train: {}, Seats: {}", trainPrn, numberOfSeatsToBeBooked);
 
         // if user is not logged in then false
@@ -97,6 +100,12 @@ public class UserBookingServiceImpl implements UserBookingService {
             log.warn("Unauthorized booking attempt - no logged in user");
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
+
+        // if date selected is in the past
+        if (dateOfTravel.isBefore(LocalDate.now())) {
+            return new ResponseDataDTO(false, ResponseStatus.INVALID_DATA, "Date of travel cannot be in the past");
+        }
+
 
         ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,source,destination);
         // if train cannot be booked then return false
@@ -189,7 +198,6 @@ public class UserBookingServiceImpl implements UserBookingService {
                     String bookedTrainPrn = ticket.getTrainId();
                     Train train = trainService.findTrainByPrn(bookedTrainPrn).get();
                     log.info("Associated train: {}", train);
-
                     // Iterate over the booked seats and mark them as available (0)
                     List<List<Integer>> bookedSeats = ticket.getBookedSeatsIndex();
                     log.info("Booked seats before freeing: {}", bookedSeats.toString());
