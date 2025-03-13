@@ -55,8 +55,6 @@ public class UserController {
 
     @PostMapping("/cancelTicket")
     public ResponseDataDTO cancelTicket(@RequestParam String ticketId){
-
-        log.info("in controller");
         return service.cancelTicket(ticketId);
     }
     @GetMapping("/fetchTicketById")

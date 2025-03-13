@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -17,8 +18,8 @@ public class TrainController {
     private final TrainService trainService;
 
     @GetMapping("/searchTrains")
-    public ResponseDataDTO searchTrains(@RequestParam String source,@RequestParam String destination){
-        return trainService.searchTrains(source,destination);
+    public ResponseDataDTO searchTrains(@RequestParam String source, @RequestParam String destination, @RequestParam LocalDate travelDate){
+        return trainService.searchTrains(source,destination,travelDate);
     }
 
     @PostMapping("/addTrain")

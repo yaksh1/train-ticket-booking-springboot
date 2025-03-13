@@ -3,13 +3,16 @@ package com.yaksh.train_ticket.service;
 import com.yaksh.train_ticket.DTO.CommonResponsesDTOs;
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.enums.ResponseStatus;
+import com.yaksh.train_ticket.model.StationSchedule;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.repository.TrainRepositoryV2;
+import com.yaksh.train_ticket.util.HelperFunctions;
 import com.yaksh.train_ticket.util.TrainServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -82,27 +85,58 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
-    public void freeTheBookedSeats(List<List<Integer>> bookedSeats, Train train) {
-        bookedSeats.forEach(seat -> train.getSeats().get(seat.get(0)).set(seat.get(1), 0));
+    public void freeTheBookedSeats(List<List<Integer>> bookedSeats, Train train,LocalDate travelDate) {
+        ResponseDataDTO seatsLayout = getSeatsAtParticularDate(train.getPrn(),travelDate);
+        log.info("seats layout before freeing {}",seatsLayout.getData());
+        if(seatsLayout.isStatus()){
+            List<List<Integer>> seatsList = (List<List<Integer>>) seatsLayout.getData();
+            bookedSeats.forEach(seat -> seatsList.get(seat.get(0)).set(seat.get(1), 0));
+            train.getSeats().put(travelDate.toString(),seatsList);
+            log.info("seats layout after freeing {}",train.getSeats().get(travelDate.toString()));
+        }
     }
 
     @Override
-    public LocalDateTime getArrivalAtSourceTime(Train train, String source) {
-        return train.getStationArrivalTimes().entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(source))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null); // Returns null if no match is found
+    public LocalDateTime getArrivalAtSourceTime(Train train, String source,LocalDate travelDate) {
+        ResponseDataDTO isScheduleAvailable = getTrainSchedule(train.getPrn(),travelDate);
+        if(isScheduleAvailable.isStatus()){
+            List<StationSchedule> schedules = (List<StationSchedule>) isScheduleAvailable.getData();
+            return schedules.
+                    stream().
+                    filter(schedule->schedule.getName().equalsIgnoreCase(source))
+                    .map(StationSchedule::getArrivalTime)
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    @Override
+    public ResponseDataDTO getTrainSchedule(String trainPrn, LocalDate travelDate) {
+        Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
+        if(train==null){
+            return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
+        }
+        return new ResponseDataDTO(true,String.format("Schedule of train %s fetched successfully",trainPrn),train.getSchedules().get(HelperFunctions.localDateToString(travelDate)));
+    }
+
+    @Override
+    public ResponseDataDTO getSeatsAtParticularDate(String trainPrn, LocalDate travelDate) {
+        Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
+        if(train==null){
+            return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
+        }
+        return new ResponseDataDTO(true,String.format("Seats of train %s fetched successfully",trainPrn),train.getSeats().get(HelperFunctions.localDateToString(travelDate)));
     }
 
 
     // Project Assumption: Every train is available every day at same time
     @Override
-    public ResponseDataDTO searchTrains(String source, String destination) {
+    public ResponseDataDTO searchTrains(String source, String destination,LocalDate travelDate) {
         log.info("Searching trains from {} to {}", source, destination);
         List<Train> trains = trainRepositoryV2.findAll()
                 .stream()
-                .filter(train -> trainServiceUtil.validTrain(source, destination, train))
+                .filter(train -> trainServiceUtil.validTrain(source, destination,travelDate, train))
                 .collect(Collectors.toList());
 
         Map<String, Object> result = Map.of(
@@ -115,7 +149,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
-    public ResponseDataDTO canBeBooked(String trainPrn,String source,String destination) {
+    public ResponseDataDTO canBeBooked(String trainPrn,String source,String destination,LocalDate travelDate) {
         log.info("Checking if train can be booked: {}", trainPrn);
         // get the train with the prn
         Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
@@ -126,9 +160,9 @@ public class TrainServiceImpl implements TrainService {
             return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
         }
         // if source and destination align with train data
-        boolean validTrain = trainServiceUtil.validTrain(source,destination,train);
+        boolean validTrain = trainServiceUtil.validTrain(source,destination,travelDate,train);
         if(!validTrain){
-            return new ResponseDataDTO(false, "Can not be Booked: Source and destination do not align with train data", train);
+            return new ResponseDataDTO(false, "Can not be Booked: Source and destination do not align with train data");
         }
 
         log.info("Train {} can be booked", trainPrn);
@@ -141,9 +175,9 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
-    public ResponseDataDTO areSeatsAvailable(Train train, int numberOfSeatsToBeBooked) {
+    public ResponseDataDTO areSeatsAvailable(Train train, int numberOfSeatsToBeBooked,LocalDate travelDate) {
         log.info("Checking seat availability for train {}: {} seats requested", train.getPrn(), numberOfSeatsToBeBooked);
-        List<List<Integer>> allSeats = train.getSeats();
+        List<List<Integer>> allSeats = train.getSeats().get(HelperFunctions.localDateToString(travelDate));
         List<List<Integer>> availableSeats = new ArrayList<>();
 
         int totalSeats = allSeats.size() * allSeats.get(0).size(); // Total number of seats

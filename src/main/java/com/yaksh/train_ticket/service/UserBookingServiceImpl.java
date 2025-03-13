@@ -104,11 +104,11 @@ public class UserBookingServiceImpl implements UserBookingService {
 
         // if date selected is in the past
         if (HelperFunctions.isDateInThePast(dateOfTravel)) {
-            CommonResponsesDTOs.dateIsInThePastDTO();
+            return CommonResponsesDTOs.dateIsInThePastDTO();
         }
 
 
-        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,source,destination);
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,source,destination,dateOfTravel);
         // if train cannot be booked then return false
         if (!canBeBooked.isStatus()) {
             log.warn("Booking failed for train {}: {}", trainPrn, canBeBooked.getMessage());
@@ -119,7 +119,7 @@ public class UserBookingServiceImpl implements UserBookingService {
         Train train = (Train) canBeBooked.getData();
 
         // Are seats available
-        ResponseDataDTO availableSeatsDTO = trainService.areSeatsAvailable(train, numberOfSeatsToBeBooked);
+        ResponseDataDTO availableSeatsDTO = trainService.areSeatsAvailable(train, numberOfSeatsToBeBooked,dateOfTravel);
 
         // if seats are not available then return
         if (!availableSeatsDTO.isStatus()) {
@@ -127,7 +127,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             return availableSeatsDTO;
         }
 
-        List<List<Integer>> allSeats = train.getSeats();
+        List<List<Integer>> allSeats = train.getSeats().get(HelperFunctions.localDateToString(dateOfTravel));
 
         List<List<Integer>> availableSeatsList;
         Object data = availableSeatsDTO.getData();
@@ -152,8 +152,8 @@ public class UserBookingServiceImpl implements UserBookingService {
                     source,
                     destination,
                     availableSeatsList,
-                    trainService.getArrivalAtSourceTime(train,source),
-                    trainService.getArrivalAtSourceTime(train,destination)
+                    trainService.getArrivalAtSourceTime(train,source,dateOfTravel),
+                    trainService.getArrivalAtSourceTime(train,destination,dateOfTravel)
                     );
             if(ticket==null){
                 return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_BOOKED, "Error while booking ticket: not saved in the DB");
@@ -211,9 +211,8 @@ public class UserBookingServiceImpl implements UserBookingService {
                     // Iterate over the booked seats and mark them as available (0)
                     List<List<Integer>> bookedSeats = ticket.getBookedSeatsIndex();
                     log.info("Booked seats before freeing: {}", bookedSeats.toString());
-                    trainService.freeTheBookedSeats(bookedSeats,train);
+                    trainService.freeTheBookedSeats(bookedSeats,train,ticket.getDateOfTravel());
                     log.info("Seats successfully freed, saving data...");
-                    log.info("Train seats after freeing: {}",train.getSeats());
                     // updating train in the DB
                     trainService.updateTrain(train);
                     log.info("Updating train in the DB");
@@ -263,13 +262,14 @@ public class UserBookingServiceImpl implements UserBookingService {
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
         if(HelperFunctions.isDateInThePast(updatedTravelDate)){
-            CommonResponsesDTOs.dateIsInThePastDTO();
+            return CommonResponsesDTOs.dateIsInThePastDTO();
         }
         Ticket ticketFound = ticketService.findTicketById(ticketId).orElse(null);
         if(ticketFound==null){
-            CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
+            return CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
         }
         // update the date in the ticket
+        trainService.canBeBooked(ticketFound.getTrainId(),ticketFound.getSource(),ticketFound.getDestination(),updatedTravelDate);
         log.info("Updating the travel date in the ticket: {}", updatedTravelDate);
         ticketFound.setDateOfTravel(updatedTravelDate);
         // save the ticket in the DB

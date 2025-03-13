@@ -1,24 +1,35 @@
 package com.yaksh.train_ticket.util;
 
 
+import com.yaksh.train_ticket.model.StationSchedule;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.repository.TrainRepositoryV2;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Service
+@Slf4j
 public class TrainServiceUtilImpl implements TrainServiceUtil {
     @Override
-    public boolean validTrain(String source, String destination, Train train) {
-        int sourceIndx = train.getStations().stream()
-                .filter(station -> station.equalsIgnoreCase(source))
+    public boolean validTrain(String source, String destination, LocalDate travelDate, Train train) {
+        List<StationSchedule> schedules = train.getSchedules().get(HelperFunctions.localDateToString(travelDate));
+        if(schedules==null){
+            return false;
+        }
+        log.info(schedules.toString());
+        int sourceIndx = schedules.stream()
+                .filter(station -> station.getName().equalsIgnoreCase(source))
                 .findFirst()
-                .map(train.getStations()::indexOf)
+                .map(schedules::indexOf)
                 .orElse(-1);
-        int destinationIndx = train.getStations().stream()
-                .filter(station -> station.equalsIgnoreCase(destination))
+        int destinationIndx = schedules.stream()
+                .filter(station -> station.getName().equalsIgnoreCase(destination))
                 .findFirst()
-                .map(train.getStations()::indexOf)
+                .map(schedules::indexOf)
                 .orElse(-1);
 
         return sourceIndx!= -1 && destinationIndx!=-1 && sourceIndx < destinationIndx;

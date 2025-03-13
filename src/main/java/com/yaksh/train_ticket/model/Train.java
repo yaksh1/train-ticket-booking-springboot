@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.sql.Time;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -27,9 +29,11 @@ public class Train {
     @Id
     private String prn;
     private String trainName;
-    private List<List<Integer>> seats;
-    private Map<String, LocalDateTime> stationArrivalTimes;
-    private List<String> stations;
+    private Map<String,List<List<Integer>>> seats;
+    @Field("schedules")
+    private Map<String, List<StationSchedule>> schedules;
+//    private Map<String, LocalDateTime> stationArrivalTimes;
+//    private List<String> stations;
 
     public String getTrainInfo(){
         return String.format("Train ID: %s",prn);
