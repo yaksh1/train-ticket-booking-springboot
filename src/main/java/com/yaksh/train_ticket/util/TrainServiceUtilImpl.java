@@ -2,6 +2,7 @@ package com.yaksh.train_ticket.util;
 
 
 import com.yaksh.train_ticket.model.Train;
+import com.yaksh.train_ticket.repository.TrainRepositoryV2;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,5 +22,14 @@ public class TrainServiceUtilImpl implements TrainServiceUtil {
                 .orElse(-1);
 
         return sourceIndx!= -1 && destinationIndx!=-1 && sourceIndx < destinationIndx;
+    }
+
+    @Override
+    public boolean doesTrainExist(String prn, TrainRepositoryV2 trainRepositoryV2) {
+        Train trainFound = trainRepositoryV2.findById(prn).orElse(null);
+        if(trainFound!=null){
+            return true;
+        }
+        return false;
     }
 }

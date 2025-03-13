@@ -144,7 +144,16 @@ public class UserBookingServiceImpl implements UserBookingService {
         try {
             // save ticket in the ticket database
             log.info("Saving ticket in the DB");
-            Ticket ticket = ticketService.createNewTicket(loggedInUser.getUserId(),train.getPrn(),dateOfTravel,source,destination,availableSeatsList);
+            Ticket ticket = ticketService.createNewTicket(
+                    loggedInUser.getUserId(),
+                    train.getPrn(),
+                    dateOfTravel,
+                    source,
+                    destination,
+                    availableSeatsList,
+                    trainService.getArrivalAtSourceTime(train,source),
+                    trainService.getArrivalAtSourceTime(train,destination)
+                    );
             if(ticket==null){
                 return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_BOOKED, "Error while booking ticket: not saved in the DB");
             }

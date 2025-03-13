@@ -11,6 +11,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.sql.Time;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +28,7 @@ public class Train {
     private String prn;
     private String trainName;
     private List<List<Integer>> seats;
-    private Map<String, String> stationArrivalTimes;
+    private Map<String, LocalDateTime> stationArrivalTimes;
     private List<String> stations;
 
     public String getTrainInfo(){

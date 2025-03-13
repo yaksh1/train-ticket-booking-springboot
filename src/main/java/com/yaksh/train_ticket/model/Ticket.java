@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 
@@ -28,7 +30,9 @@ public class Ticket {
     private String trainId;
     private LocalDate dateOfTravel;
     private String source;
+    private LocalDateTime arrivalTimeAtSource;
     private String destination;
+    private LocalDateTime reachingTimeAtDestination;
 
     private List<List<Integer>> bookedSeatsIndex;
 

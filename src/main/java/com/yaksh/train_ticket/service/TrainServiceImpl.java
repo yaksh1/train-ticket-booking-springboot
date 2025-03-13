@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,11 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO addTrain(Train newTrain) {
         log.info("Attempting to add new train: {}", newTrain.getPrn());
         try {
+            // if train with same prn exists then return false
+            if(trainServiceUtil.doesTrainExist(newTrain.getPrn(),trainRepositoryV2)){
+                return new ResponseDataDTO(false,ResponseStatus.TRAIN_ALREADY_EXISTS,"Train added in the collection");
+            }
+
             trainRepositoryV2.save(newTrain);
             log.info("Train added successfully: {}", newTrain.getPrn());
             return new ResponseDataDTO(true,"Train added in the collection",newTrain);
@@ -38,10 +44,17 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO addMultipleTrains(List<Train> newTrains) {
         log.info("Attempting to add {} trains", newTrains.size());
         try {
+            List<String> existingTrainPrns = newTrains.stream().filter(
+                    train -> trainServiceUtil.doesTrainExist(train.getPrn(),trainRepositoryV2)
+            ).map(train -> train.getPrn()).collect(Collectors.toList());
 
-            trainRepositoryV2.saveAll(newTrains);
+            List<Train> newTrainsToAdd = newTrains.stream()
+                    .filter(train -> !trainServiceUtil.doesTrainExist(train.getPrn(), trainRepositoryV2)) // Only new trains
+                    .collect(Collectors.toList());
+            trainRepositoryV2.saveAll(newTrainsToAdd);
             log.info("Successfully added {} trains", newTrains.size());
-            return new ResponseDataDTO(true,"Trains added in the collection",newTrains);
+            log.info("Successfully skipped trains with prn {}", existingTrainPrns);
+            return new ResponseDataDTO(true,"Trains added in the collection except trains with prn: "+ existingTrainPrns,newTrainsToAdd);
         } catch (Exception e) {
             log.error("Error adding multiple trains: {}", e.getMessage(), e);
             return CommonResponsesDTOs.trainNotAddedToCollectionDTO(e.getMessage());
@@ -72,6 +85,16 @@ public class TrainServiceImpl implements TrainService {
     public void freeTheBookedSeats(List<List<Integer>> bookedSeats, Train train) {
         bookedSeats.forEach(seat -> train.getSeats().get(seat.get(0)).set(seat.get(1), 0));
     }
+
+    @Override
+    public LocalDateTime getArrivalAtSourceTime(Train train, String source) {
+        return train.getStationArrivalTimes().entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(source))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null); // Returns null if no match is found
+    }
+
 
     // Project Assumption: Every train is available every day at same time
     @Override

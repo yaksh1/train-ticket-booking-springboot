@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,14 +51,16 @@ public class TicketServiceImpl implements TicketService{
     }
 
     @Override
-    public Ticket createNewTicket(String userId, String trainPrn, LocalDate dateOfTravel, String source, String destination, List<List<Integer>> availableSeatsList) {
+    public Ticket createNewTicket(String userId, String trainPrn, LocalDate dateOfTravel, String source, String destination, List<List<Integer>> availableSeatsList, LocalDateTime arrivalTimeAtSource, LocalDateTime reachingTimeAtDestination) {
         Ticket ticket = new Ticket(
                 UUID.randomUUID().toString(),
                 userId,
                 trainPrn,
                 dateOfTravel,
                 source,
+                arrivalTimeAtSource,
                 destination,
+                reachingTimeAtDestination,
                 availableSeatsList
         );
         return saveTicket(ticket);

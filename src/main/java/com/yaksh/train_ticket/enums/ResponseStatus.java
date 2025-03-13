@@ -10,6 +10,7 @@ public enum ResponseStatus {
     // trains
     NOT_ENOUGH_SEATS,
     TRAIN_DOES_NOT_EXISTS,
+    TRAIN_ALREADY_EXISTS,
     TRAIN_NOT_SAVED_IN_COLLECTION,
     TRAIN_UPDATING_FAILED,
 
