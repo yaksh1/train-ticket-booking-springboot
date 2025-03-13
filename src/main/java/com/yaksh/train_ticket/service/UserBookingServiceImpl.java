@@ -6,6 +6,7 @@ import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.UserRepositoryV2;
+import com.yaksh.train_ticket.util.HelperFunctions;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -102,8 +103,8 @@ public class UserBookingServiceImpl implements UserBookingService {
         }
 
         // if date selected is in the past
-        if (dateOfTravel.isBefore(LocalDate.now())) {
-            return new ResponseDataDTO(false, ResponseStatus.INVALID_DATA, "Date of travel cannot be in the past");
+        if (HelperFunctions.isDateInThePast(dateOfTravel)) {
+            CommonResponsesDTOs.dateIsInThePastDTO();
         }
 
 
@@ -252,5 +253,28 @@ public class UserBookingServiceImpl implements UserBookingService {
             return CommonResponsesDTOs.ticketNotFoundDTO(idOfTicketToFind);
         }
         return new ResponseDataDTO(true, "Ticket found", ticketFound);
+    }
+
+    @Override
+    public ResponseDataDTO rescheduleTicket(String ticketId, LocalDate updatedTravelDate) {
+        // If user is not logged in, return an error
+        if (loggedInUser == null) {
+            log.warn("Unauthorized ticket rescheduling attempt - no logged in user");
+            return CommonResponsesDTOs.userNotLoggedInDTO();
+        }
+        if(HelperFunctions.isDateInThePast(updatedTravelDate)){
+            CommonResponsesDTOs.dateIsInThePastDTO();
+        }
+        Ticket ticketFound = ticketService.findTicketById(ticketId).orElse(null);
+        if(ticketFound==null){
+            CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
+        }
+        // update the date in the ticket
+        log.info("Updating the travel date in the ticket: {}", updatedTravelDate);
+        ticketFound.setDateOfTravel(updatedTravelDate);
+        // save the ticket in the DB
+        log.info("Saving the ticket in the database");
+        ticketService.saveTicket(ticketFound);
+        return new ResponseDataDTO(true,"Travel date updated successfully");
     }
 }

@@ -40,7 +40,12 @@ public class UserController {
         return service.signupUser(userName,password);
     }
     @PostMapping("/bookTicket")
-    public ResponseDataDTO bookTicket(@RequestParam String trainPrn, @RequestParam String source, @RequestParam String destination, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfTravel, @RequestParam int numberOfSeatsToBeBooked){
+    public ResponseDataDTO bookTicket(
+            @RequestParam String trainPrn,
+            @RequestParam String source,
+            @RequestParam String destination,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfTravel,
+            @RequestParam int numberOfSeatsToBeBooked){
         return service.bookTicket(trainPrn,source,destination,dateOfTravel,numberOfSeatsToBeBooked);
     }
     @GetMapping("/fetchTickets")
@@ -57,5 +62,12 @@ public class UserController {
     @GetMapping("/fetchTicketById")
     public ResponseDataDTO fetchTicketById(@RequestParam String ticketId){
         return service.fetchTicketById(ticketId);
+    }
+
+    @PostMapping("/rescheduleTicket")
+    public ResponseDataDTO rescheduleTicket(
+            @RequestParam String ticketId,
+            @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate updatedDateOfTravel){
+        return service.rescheduleTicket(ticketId,updatedDateOfTravel);
     }
 }

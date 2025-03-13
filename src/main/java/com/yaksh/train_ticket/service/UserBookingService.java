@@ -4,6 +4,7 @@ import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,7 +22,8 @@ public interface UserBookingService {
     ResponseDataDTO fetchAllTickets();
     ResponseDataDTO cancelTicket(String IdOfTicketToCancel);
     ResponseDataDTO fetchTicketById(String IdOfTicketToFind);
-
+    ResponseDataDTO rescheduleTicket(String ticketId, LocalDate updatedTravelDate);
+;
     // also update booking logic with dates (can book at different dates with date specified train seats)
 
 }

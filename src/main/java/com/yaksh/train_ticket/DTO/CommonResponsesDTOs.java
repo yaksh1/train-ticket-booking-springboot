@@ -20,6 +20,9 @@ public class CommonResponsesDTOs {
     public static ResponseDataDTO trainNotAddedToCollectionDTO(String message){
         return new ResponseDataDTO(false,ResponseStatus.TRAIN_NOT_SAVED_IN_COLLECTION,"Error while saving the train: "+message);
     }
+    public static ResponseDataDTO dateIsInThePastDTO(){
+        return new ResponseDataDTO(false, ResponseStatus.INVALID_DATA, "Date of travel cannot be in the past");
+    }
 
 
 
