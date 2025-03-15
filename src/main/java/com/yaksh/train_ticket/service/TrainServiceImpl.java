@@ -129,8 +129,6 @@ public class TrainServiceImpl implements TrainService {
         return new ResponseDataDTO(true,String.format("Seats of train %s fetched successfully",trainPrn),train.getSeats().get(HelperFunctions.localDateToString(travelDate)));
     }
 
-
-    // Project Assumption: Every train is available every day at same time
     @Override
     public ResponseDataDTO searchTrains(String source, String destination,LocalDate travelDate) {
         log.info("Searching trains from {} to {}", source, destination);
@@ -187,7 +185,32 @@ public class TrainServiceImpl implements TrainService {
             log.warn("Not enough seats available in train {}: requested {} seats, total seats {}", train.getPrn(), numberOfSeatsToBeBooked, totalSeats);
             return CommonResponsesDTOs.notEnoughSeatsDTO();
         }
+        int foundContinuousSeats= 0;
+        // first try to find continuous seats if available
+        for(int index=0;index<totalSeats;index++){
+            int row = index / allSeats.get(0).size(); // Row number
+            int col = index % allSeats.get(0).size(); // Column number
 
+            // if a filled seat found then initialize counter and seats list to zero
+            if(allSeats.get(row).get(col)==1){
+                foundContinuousSeats=0;
+                availableSeats = new ArrayList<>();
+            }else{
+                foundContinuousSeats++;
+                availableSeats.add(Arrays.asList(row,col));
+            }
+
+            if(foundContinuousSeats==numberOfSeatsToBeBooked){
+                log.info("Found {} available continuous seats in train {}", numberOfSeatsToBeBooked, train.getPrn());
+                return new ResponseDataDTO(true, "Seats found", availableSeats);
+            }
+        }
+
+        // continuous seats not found
+        log.info("Continuous seats not found", numberOfSeatsToBeBooked, train.getPrn());
+        availableSeats = new ArrayList<>();
+
+        // try to find seats separately
         for (int index = 0; index < totalSeats; index++) {
             int row = index / allSeats.get(0).size(); // Row number
             int col = index % allSeats.get(0).size(); // Column number
