@@ -27,10 +27,15 @@ jobs:
       - name: Find Modified Java Files
         id: changed_files
         run: |
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            PREV_COMMIT=$(git rev-parse HEAD~1)
+          else
+            PREV_COMMIT=$(git rev-list --max-parents=0 HEAD)  # First commit in the repo
+          fi
           LAST_COMMIT=$(git rev-parse HEAD)
-          PREV_COMMIT=$(git rev-parse HEAD~1)
           CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $LAST_COMMIT -- '*.java')
           echo "changed_files=$CHANGED_FILES" >> $GITHUB_ENV
+
 
       - name: Run Auto Comment Script
         run: |
