@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class StationSchedule {
     private String name;
     private LocalDateTime arrivalTime;
