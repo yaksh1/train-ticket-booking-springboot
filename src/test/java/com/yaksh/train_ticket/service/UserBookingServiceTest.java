@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -536,13 +537,11 @@ public class UserBookingServiceTest {
         public void userBookingService_cancelTicket_success() {
                 // Arrange (book seats)
                 mockTicket.setBookedSeatsIndex(List.of(
-                                new ArrayList<>(List.of(0, 1)), 
-                                new ArrayList<>(List.of(0, 0)) 
-                ));
-                
+                                new ArrayList<>(List.of(0, 1)),
+                                new ArrayList<>(List.of(0, 0))));
+
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
                 mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
-                
 
                 // Mocking responses
                 when(trainService.findTrainByPrn(trainPrn)).thenReturn(Optional.of(mockTrain));
@@ -558,5 +557,87 @@ public class UserBookingServiceTest {
                 verify(trainService, times(1)).updateTrain(mockTrain);
                 verify(ticketService, times(1)).deleteTicketById(ticketId);
         }
+        
+        @Test
+        public void userBookingService_cancelTicket_ticketNotFound() {
+                // Arrange (book seats)
+                mockTicket.setBookedSeatsIndex(List.of(
+                                new ArrayList<>(List.of(0, 1)),
+                                new ArrayList<>(List.of(0, 0))));
+
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
+
+                // Act
+                ResponseDataDTO response = userBookingService.cancelTicket(ticketId);
+
+                // Assert
+                Assertions.assertThat(response.isStatus()).isFalse();
+                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.TICKET_NOT_FOUND);
+                verify(userRepositoryV2, never()).save(mockUser);
+                verify(trainService, never()).updateTrain(mockTrain);
+                verify(ticketService, never()).deleteTicketById(ticketId);
+        }
+        @Test
+        public void userBookingService_cancelTicket_userNotLoggedIn() {
+                // Arrange (book seats)
+                mockUser = null;
+                mockTicket.setBookedSeatsIndex(List.of(
+                                new ArrayList<>(List.of(0, 1)),
+                                new ArrayList<>(List.of(0, 0))));
+
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
+
+                // Act
+                ResponseDataDTO response = userBookingService.cancelTicket(ticketId);
+
+                // Assert
+                Assertions.assertThat(response.isStatus()).isFalse();
+                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.USER_NOT_FOUND);
+                verify(userRepositoryV2, never()).save(mockUser);
+                verify(trainService, never()).updateTrain(mockTrain);
+                verify(ticketService, never()).deleteTicketById(ticketId);
+        }
+        @Test
+        public void userBookingService_cancelTicket_ExceptionDuringSaving() {
+                // Arrange (book seats)
+                mockTicket.setBookedSeatsIndex(List.of(
+                                new ArrayList<>(List.of(0, 1)),
+                                new ArrayList<>(List.of(0, 0))));
+
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
+
+                // Mocking responses
+                when(trainService.findTrainByPrn(trainPrn)).thenReturn(Optional.of(mockTrain));
+                doNothing().when(trainService).freeTheBookedSeats(any(), any(), any());
+
+                // Act
+                ResponseDataDTO response = userBookingService.cancelTicket(ticketId);
+
+                // Assert
+                Assertions.assertThat(response.isStatus()).isFalse();
+                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.USER_NOT_FOUND);
+                verify(userRepositoryV2, never()).save(mockUser);
+                verify(trainService, never()).updateTrain(mockTrain);
+                verify(ticketService, never()).deleteTicketById(ticketId);
+        }
+
+        @Test
+    public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
+        // Arrange
+        ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
+        mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
+
+        // Mocking dependencies
+        when(trainService.findTrainByPrn(anyString())).thenThrow(new RuntimeException("Train service error"));
+
+        // Act
+        ResponseDataDTO response = userBookingService.cancelTicket(ticketId);
+
+        // Assert
+        Assertions.assertThat(response.isStatus()).isFalse();
+        Assertions.assertThat(response.getMessage()).contains("Error while canceling ticket");
+        verify(trainService, times(1)).findTrainByPrn(anyString());
+        verify(userRepositoryV2, never()).save(any(User.class));
+    }
 
 }
