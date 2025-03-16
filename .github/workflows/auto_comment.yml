@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Ensure previous commit is available for comparison
 
       - name: Set Up Python
         uses: actions/setup-python@v4
@@ -30,21 +32,30 @@ jobs:
           if git rev-parse HEAD~1 >/dev/null 2>&1; then
             PREV_COMMIT=$(git rev-parse HEAD~1)
           else
-            PREV_COMMIT=$(git rev-list --max-parents=0 HEAD)  # First commit in the repo
+            PREV_COMMIT=$(git rev-list --max-parents=0 HEAD)  # First commit in repo
           fi
           LAST_COMMIT=$(git rev-parse HEAD)
+          
+          # Get list of changed Java files
           CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $LAST_COMMIT -- '*.java')
-          echo "changed_files=$CHANGED_FILES" >> $GITHUB_ENV
-
+          
+          if [[ -z "$CHANGED_FILES" ]]; then
+            echo "No Java files changed."
+            echo "changed_files=" >> $GITHUB_ENV
+          else
+            echo "Modified Java files: $CHANGED_FILES"
+            echo "changed_files=$CHANGED_FILES" >> $GITHUB_ENV
+          fi
 
       - name: Run Auto Comment Script
         run: |
-          for file in $changed_files; do
-            python auto_comment.py "$file"
-          done
-        env:
-          changed_files: ${{ env.changed_files }}
-        if: env.changed_files != ''
+          if [[ -n "${{ env.changed_files }}" ]]; then
+            for file in ${{ env.changed_files }}; do
+              python auto_comment.py "$file"
+            done
+          else
+            echo "No Java files to process."
+          fi
 
       - name: Commit Changes
         run: |
@@ -53,3 +64,5 @@ jobs:
           git add .
           git commit -m "Auto-commented Java files" || echo "No changes to commit"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.AUTO_COMMENT_TOKEN }}
