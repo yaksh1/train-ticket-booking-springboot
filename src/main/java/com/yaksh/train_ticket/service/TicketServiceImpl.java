@@ -19,7 +19,7 @@ import java.util.UUID;
 @Slf4j
 public class TicketServiceImpl implements TicketService{
 
-    private final TicketRepositoryV2 ticketRepositoryV2;
+    private final   TicketRepositoryV2 ticketRepositoryV2;
 
     @Override
     public Ticket saveTicket(Ticket ticketToSave) {
