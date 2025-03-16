@@ -619,7 +619,8 @@ public class UserBookingServiceTest {
                 Assertions.assertThat(response.isStatus()).isFalse();
                 Assertions.assertThat(response.getMessage()).contains("Error while canceling ticket");
                 verify(trainService, times(1)).findTrainByPrn(anyString());
-                verify(userRepositoryV2, times(1)).save(mockUser);}
+                verify(userRepositoryV2, times(1)).save(mockUser);
+        }
 
         @Test
     public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
@@ -639,5 +640,4 @@ public class UserBookingServiceTest {
         verify(trainService, times(1)).findTrainByPrn(anyString());
         verify(userRepositoryV2, never()).save(any(User.class));
     }
-
 }

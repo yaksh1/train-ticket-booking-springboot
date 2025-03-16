@@ -1,14 +1,24 @@
 import os
 import sys
+from dotenv import load_dotenv
 import re
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
+# Load environment variables from .env file
+load_dotenv()
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()  # Ensure it's a string
+
+if not GITHUB_TOKEN:
+    print("Error: GITHUB_TOKEN is not set. Make sure you have a .env file.")
+    sys.exit(1)
+
 # Set up Azure AI client
 client = ChatCompletionsClient(
     endpoint="https://models.inference.ai.azure.com",
-    credential=AzureKeyCredential("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"),  # Set your token as an environment variable
+    credential=AzureKeyCredential(GITHUB_TOKEN),  # Set your token as an environment variable
 )
 
 def generate_commented_code(java_code):
