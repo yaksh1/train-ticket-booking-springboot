@@ -605,9 +605,11 @@ public class UserBookingServiceTest {
                                 new ArrayList<>(List.of(0, 0))));
 
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
+                mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
 
                 // Mocking responses
                 when(trainService.findTrainByPrn(trainPrn)).thenReturn(Optional.of(mockTrain));
+                when(userRepositoryV2.save(mockUser)).thenThrow(new RuntimeException("DB error"));
                 doNothing().when(trainService).freeTheBookedSeats(any(), any(), any());
 
                 // Act
@@ -615,11 +617,9 @@ public class UserBookingServiceTest {
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
-                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.USER_NOT_FOUND);
-                verify(userRepositoryV2, never()).save(mockUser);
-                verify(trainService, never()).updateTrain(mockTrain);
-                verify(ticketService, never()).deleteTicketById(ticketId);
-        }
+                Assertions.assertThat(response.getMessage()).contains("Error while canceling ticket");
+                verify(trainService, times(1)).findTrainByPrn(anyString());
+                verify(userRepositoryV2, times(1)).save(mockUser);}
 
         @Test
     public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
