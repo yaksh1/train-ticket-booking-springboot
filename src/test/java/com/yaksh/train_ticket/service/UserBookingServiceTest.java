@@ -9,6 +9,7 @@ import com.yaksh.train_ticket.repository.UserRepositoryV2;
 import com.yaksh.train_ticket.util.HelperFunctions;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,13 +38,49 @@ public class UserBookingServiceTest {
         @InjectMocks
         private UserBookingServiceImpl userBookingService;
 
+        // Common test data
+        private User mockUser;
+        private Ticket mockTicket;
+        private Train mockTrain;
+        private final String userName = "user1";
+        private final String password = "securePassword";
+        private final String hashedPassword = "hashedPassword";
+        private final String trainPrn = "train123";
+        private final String ticketId = "ticket1";
+        private final String source = "Mumbai";
+        private final String destination = "Delhi";
+        private final LocalDate travelDate = LocalDate.now().plusDays(5);
+
+        @BeforeEach
+    public void setup() {
+        // Setup mock user
+        mockUser = User.builder()
+                .userId(UUID.randomUUID().toString())
+                .userName(userName)
+                .hashedPassword(hashedPassword)
+                .ticketsBooked(new ArrayList<>())
+                .build();
+
+        // Setup mock ticket
+        mockTicket = Ticket.builder()
+                .ticketId(ticketId)
+                .trainId(trainPrn)
+                .source(source)
+                .destination(destination)
+                .dateOfTravel(travelDate)
+                .build();
+
+        // Setup mock train
+        mockTrain = Train.builder()
+                .prn(trainPrn)
+                .seats(new HashMap<>())
+                .build();
+    }
+
         @Test
         public void userBookingService_signUpUser_success() {
-                // Arrange - Setting up test data and mocking dependencies
-                String userName = "user1"; // The username to be tested
-                String password = "securePassword"; // Raw password input
-                String hashedPassword = "hashedPassword"; // Simulated hashed password returned by userServiceUtil
-
+                // Arrange - Setting up test data and mocking dependencies (already initialized in setup method)
+                
                 // Mock behavior: Simulate that no user exists with the given username.
                 when(userRepositoryV2.findByUserName(userName.toLowerCase())).thenReturn(Optional.empty());
 
@@ -78,8 +115,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_signUpUser_userAlreadyExists() {
                 // Arrange
-                String userName = "user1";
-                String password = "securePassword";
 
                 when(userRepositoryV2.findByUserName(userName.toLowerCase())).thenReturn(Optional.of(new User()));
 
@@ -97,9 +132,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_signUpUser_exceptionWhenSaving() {
                 // Arrange
-                String userName = "user1";
-                String password = "securePassword";
-                String hashedPassword = "hashedPassword";
 
                 when(userRepositoryV2.findByUserName(userName.toLowerCase())).thenReturn(Optional.empty());
                 when(userServiceUtil.hashPassword(password)).thenReturn(hashedPassword);
@@ -123,15 +155,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_loginUser_success() {
                 // Arrange
-                String userName = "user1";
-                String password = "securePassword";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
 
                 when(userRepositoryV2.findByUserName(userName.toLowerCase()))
                                 .thenReturn(Optional.of(mockUser));
@@ -151,15 +174,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_loginUser_incorrectPassword() {
                 // Arrange
-                String userName = "user1";
-                String password = "securePassword";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
 
                 when(userRepositoryV2.findByUserName(userName.toLowerCase()))
                                 .thenReturn(Optional.of(mockUser));
@@ -179,9 +193,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_loginUser_userNotFound() {
                 // Arrange
-                String userName = "user1";
-                String password = "securePassword";
-                String hashedPassword = "hashedPassword";
 
                 when(userRepositoryV2.findByUserName(userName.toLowerCase()))
                                 .thenReturn(Optional.empty());
@@ -200,14 +211,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_fetchAllTickets_success() {
                 // Arrange
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
                 List<Ticket> mockTickets = List.of(
                                 Ticket.builder()
                                                 .ticketId("ticket1")
@@ -249,14 +252,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_fetchTicketById_success() {
                 // Arrange
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
 
                 // Set logged in User
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
@@ -276,14 +271,6 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_fetchTicketById_ticketNotFound() {
                 // Arrange
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
 
                 when(ticketService.findTicketById(any(String.class))).thenReturn(Optional.empty());
 
@@ -318,27 +305,12 @@ public class UserBookingServiceTest {
 
         @Test
         public void userBookingService_rescheduleTicket_success() {
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
+                // Arrange
 
                 // set logged in user
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
-                String ticketId = "ticket1";
                 LocalDate newTravelDate = LocalDate.now().plusDays(5); // Future date
-                Ticket mockTicket = Ticket.builder()
-                                .ticketId(ticketId)
-                                .trainId("train123")
-                                .source("Mumbai")
-                                .destination("Delhi")
-                                .dateOfTravel(LocalDate.now().plusDays(1))
-                                .build();
 
                 when(ticketService.findTicketById(ticketId)).thenReturn(Optional.of(mockTicket));
                 when(trainService.canBeBooked(any(), any(), any(), any()))
@@ -358,27 +330,13 @@ public class UserBookingServiceTest {
 
         @Test
         public void userBookingService_rescheduleTicket_cannotBeBooked() {
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
+                // Arrange
 
                 // set logged in user
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
-                String ticketId = "ticket1";
+                
                 LocalDate newTravelDate = LocalDate.now().plusDays(5); // Future date
-                Ticket mockTicket = Ticket.builder()
-                                .ticketId(ticketId)
-                                .trainId("train123")
-                                .source("Mumbai")
-                                .destination("Delhi")
-                                .dateOfTravel(LocalDate.now().plusDays(1))
-                                .build();
 
                 when(ticketService.findTicketById(ticketId)).thenReturn(Optional.of(mockTicket));
                 when(trainService.canBeBooked(any(), any(), any(), any()))
@@ -395,19 +353,10 @@ public class UserBookingServiceTest {
 
         @Test
         public void userBookingService_rescheduleTicket_ticketNotFound() {
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
 
                 // set logged in user
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
-                String ticketId = "ticket1";
                 LocalDate newTravelDate = LocalDate.now().plusDays(5); // Future date
 
                 when(ticketService.findTicketById(ticketId)).thenReturn(Optional.empty());
@@ -424,19 +373,11 @@ public class UserBookingServiceTest {
 
         @Test
         public void userBookingService_rescheduleTicket_dateIsInThePast() {
-                String userName = "user1";
-                String hashedPassword = "hashedPassword";
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName(userName)
-                                .hashedPassword(hashedPassword)
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
+                // Arrange
 
                 // set logged in user
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
-                String ticketId = "ticket1";
                 LocalDate newTravelDate = LocalDate.now().minusDays(5); // Future date
 
                 // Act
@@ -452,7 +393,7 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_rescheduleTicket_userNotLoggedIn() {
                 User mockUser = null;
-                String ticketId = "ticket1";
+                
                 LocalDate newTravelDate = LocalDate.now().plusDays(3);
                 // set logged in user
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
@@ -470,36 +411,12 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_bookTicket_success() {
                 // Arrange
-                String trainPrn = "train123";
-                String source = "Mumbai";
-                String destination = "Delhi";
-                LocalDate travelDate = LocalDate.now().plusDays(5);
                 int seatsToBook = 2;
-
-                Train mockTrain = Train.builder()
-                                .prn(trainPrn)
-                                .seats(new HashMap<>())
-                                .build();
-
                 List<List<Integer>> seatLayout = List.of(
                                 new ArrayList<>(List.of(0, 0, 0)), // Row 1
                                 new ArrayList<>(List.of(0, 1, 0)) // Row 2
                 );
 
-                Ticket mockTicket = Ticket.builder()
-                                .ticketId("ticket1")
-                                .trainId(trainPrn)
-                                .dateOfTravel(travelDate)
-                                .source(source)
-                                .destination(destination)
-                                .build();
-
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName("user1")
-                                .hashedPassword("hashedPassword")
-                                .ticketsBooked(new ArrayList<>())
-                                .build();
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
                 // Mocking responses
@@ -531,8 +448,8 @@ public class UserBookingServiceTest {
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", null);
 
                 // Act
-                ResponseDataDTO response = userBookingService.bookTicket("train123", "Mumbai", "Delhi",
-                                LocalDate.now().plusDays(5), 2);
+                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, source, destination,
+                                travelDate, 2);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
@@ -544,10 +461,10 @@ public class UserBookingServiceTest {
         public void userBookingService_bookTicket_dateInPast() {
                 // Arrange
                 LocalDate pastDate = LocalDate.now().minusDays(1);
-                ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser",mockUser);
 
                 // Act
-                ResponseDataDTO response = userBookingService.bookTicket("train123", "Mumbai", "Delhi", pastDate, 2);
+                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, source, destination, pastDate, 2);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
@@ -558,15 +475,13 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_bookTicket_trainCannotBeBooked() {
                 // Arrange
-                String trainPrn = "train123";
-                LocalDate travelDate = LocalDate.now().plusDays(5);
-                ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
                 ResponseDataDTO failedResponse = new ResponseDataDTO(false, "Train is not available");
-                when(trainService.canBeBooked(trainPrn, "Mumbai", "Delhi", travelDate)).thenReturn(failedResponse);
+                when(trainService.canBeBooked(trainPrn, source, destination, travelDate)).thenReturn(failedResponse);
 
                 // Act
-                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, "Mumbai", "Delhi", travelDate, 2);
+                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, source, destination, travelDate, 2);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
@@ -576,19 +491,16 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_bookTicket_noSeatsAvailable() {
                 // Arrange
-                String trainPrn = "train123";
-                LocalDate travelDate = LocalDate.now().plusDays(5);
-                ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
-                Train mockTrain = new Train();
                 ResponseDataDTO trainResponse = new ResponseDataDTO(true, "Train available", mockTrain);
                 ResponseDataDTO noSeatsResponse = new ResponseDataDTO(false, "No seats available");
 
-                when(trainService.canBeBooked(trainPrn, "Mumbai", "Delhi", travelDate)).thenReturn(trainResponse);
+                when(trainService.canBeBooked(trainPrn, source, destination, travelDate)).thenReturn(trainResponse);
                 when(trainService.areSeatsAvailable(mockTrain, 2, travelDate)).thenReturn(noSeatsResponse);
 
                 // Act
-                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, "Mumbai", "Delhi", travelDate, 2);
+                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, source, destination, travelDate, 2);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
@@ -598,17 +510,11 @@ public class UserBookingServiceTest {
         @Test
         public void userBookingService_bookTicket_exceptionDuringBooking() {
                 // Arrange
-                String trainPrn = "train123";
-                LocalDate travelDate = LocalDate.now().plusDays(5);
-                ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
+                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
 
-                Train mockTrain = Train.builder()
-                                .prn(trainPrn)
-                                .seats(new HashMap<>())
-                                .build();
                 List<List<Integer>> seatLayout = List.of(List.of(0, 0, 0));
 
-                when(trainService.canBeBooked(trainPrn, "Mumbai", "Delhi", travelDate))
+                when(trainService.canBeBooked(trainPrn, source, destination, travelDate))
                                 .thenReturn(new ResponseDataDTO(true, "Train available", mockTrain));
 
                 when(trainService.areSeatsAvailable(mockTrain, 2, travelDate))
@@ -619,7 +525,7 @@ public class UserBookingServiceTest {
                                 .thenThrow(new RuntimeException("Database error"));
 
                 // Act
-                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, "Mumbai", "Delhi", travelDate, 2);
+                ResponseDataDTO response = userBookingService.bookTicket(trainPrn, source, destination, travelDate, 2);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
@@ -628,35 +534,18 @@ public class UserBookingServiceTest {
 
         @Test
         public void userBookingService_cancelTicket_success() {
-                // Arrange
-                String ticketId = "ticket1";
-                Ticket mockTicket = Ticket.builder()
-                                .ticketId(ticketId)
-                                .trainId("train123")
-                                .source("Mumbai")
-                                .destination("Delhi")
-                                .dateOfTravel(LocalDate.now().plusDays(5))
-                                .bookedSeatsIndex(List.of(
-                                                new ArrayList<>(List.of(0, 1)), // Row 1
-                                                new ArrayList<>(List.of(0, 0)) // Row 2
-                                ))
-                                .build();
-
-                Train mockTrain = Train.builder()
-                                .prn("train123")
-                                .seats(new HashMap<>())
-                                .build();
-
-                User mockUser = User.builder()
-                                .userId(UUID.randomUUID().toString())
-                                .userName("user1")
-                                .hashedPassword("hashedPassword")
-                                .ticketsBooked(new ArrayList<>(List.of(mockTicket)))
-                                .build();
+                // Arrange (book seats)
+                mockTicket.setBookedSeatsIndex(List.of(
+                                new ArrayList<>(List.of(0, 1)), 
+                                new ArrayList<>(List.of(0, 0)) 
+                ));
+                
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
+                mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
+                
 
                 // Mocking responses
-                when(trainService.findTrainByPrn(mockTicket.getTrainId())).thenReturn(Optional.of(mockTrain));
+                when(trainService.findTrainByPrn(trainPrn)).thenReturn(Optional.of(mockTrain));
                 doNothing().when(trainService).freeTheBookedSeats(any(), any(), any());
 
                 // Act
