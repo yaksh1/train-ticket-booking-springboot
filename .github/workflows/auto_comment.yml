@@ -1,0 +1,49 @@
+name: Auto-Comment Java Code
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  auto_comment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt  # If you have dependencies
+
+      - name: Load Environment Variables
+        run: echo "GITHUB_TOKEN=${{ secrets.AUTO_COMMENT_TOKEN }}" > .env
+
+      - name: Find Modified Java Files
+        id: changed_files
+        run: |
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.java')
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_ENV
+
+      - name: Run Auto Comment Script
+        run: |
+          for file in ${{ env.changed_files }}; do
+            python auto_comment.py "$file"
+          done
+        if: env.changed_files != ''
+
+      - name: Commit Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Auto-commented Java files" || echo "No changes to commit"
+          git push
