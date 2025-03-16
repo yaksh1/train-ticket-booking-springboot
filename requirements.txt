@@ -1,5 +1,3 @@
-os
-sys
 python-dotenv
 azure-ai-inference
 azure-core
