@@ -27,14 +27,18 @@ jobs:
       - name: Find Modified Java Files
         id: changed_files
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.java')
+          LAST_COMMIT=$(git rev-parse HEAD)
+          PREV_COMMIT=$(git rev-parse HEAD~1)
+          CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $LAST_COMMIT -- '*.java')
           echo "changed_files=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Run Auto Comment Script
         run: |
-          for file in ${{ env.changed_files }}; do
+          for file in $changed_files; do
             python auto_comment.py "$file"
           done
+        env:
+          changed_files: ${{ env.changed_files }}
         if: env.changed_files != ''
 
       - name: Commit Changes
