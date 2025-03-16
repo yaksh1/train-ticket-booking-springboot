@@ -52,7 +52,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     @Override
     public ResponseDataDTO loginUser(String userName, String password) {
         log.info("Login attempt for user: {}", userName);
-        return userRepositoryV2.findByUserName(userName)
+        return userRepositoryV2.findByUserName(userName.toLowerCase())
                 .map(user -> userServiceUtil.checkPassword(password, user.getHashedPassword())
                         ? new ResponseDataDTO(true, "User Found", user)
                         // user is found but password not correct
@@ -89,8 +89,13 @@ public class UserBookingServiceImpl implements UserBookingService {
     // but in real world we just enter the number of seats and seats get assigned to us based
     // on availability
 
-    // Thus NEW LOGIC: user enters number of seats he wants to book
+    // Thus NEW LOGIC(V1): user enters number of seats he wants to book
     // , and we book those seats even if they are in different rows
+
+    // NEW LOGIC (V2): user enters number of seats to book, first we check if seats
+    // are available in contiguous manner (eg. 10 seats together), if not then
+    // only we book seats even if they are not together
+
     @Override
     public ResponseDataDTO bookTicket(String trainPrn, String source, String destination,
                                       LocalDate dateOfTravel, int numberOfSeatsToBeBooked) {
@@ -269,7 +274,11 @@ public class UserBookingServiceImpl implements UserBookingService {
             return CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
         }
         // update the date in the ticket
-        trainService.canBeBooked(ticketFound.getTrainId(),ticketFound.getSource(),ticketFound.getDestination(),updatedTravelDate);
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(ticketFound.getTrainId(),ticketFound.getSource(),ticketFound.getDestination(),updatedTravelDate);
+        if (!canBeBooked.isStatus()) {
+            log.warn("travel date update failed for train {}: {}", ticketFound.getTrainId(), canBeBooked.getMessage());
+            return canBeBooked;
+        }
         log.info("Updating the travel date in the ticket: {}", updatedTravelDate);
         ticketFound.setDateOfTravel(updatedTravelDate);
         // save the ticket in the DB
