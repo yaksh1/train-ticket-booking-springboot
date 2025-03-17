@@ -1,18 +1,19 @@
 import os
 import sys
-import subprocess
 import re
 from dotenv import load_dotenv
+import subprocess
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
 # Load environment variables
 load_dotenv()
+
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 
 if not GITHUB_TOKEN:
-    print("Error: GITHUB_TOKEN is not set.")
+    print("Error: GITHUB_TOKEN is not set. Make sure you have a .env file.")
     sys.exit(1)
 
 # Set up Azure AI client
@@ -22,70 +23,69 @@ client = ChatCompletionsClient(
 )
 
 def get_modified_lines(file_path):
-    """ Extracts changed lines from the given Java file using git diff. """
+    """
+    Get only the modified lines from the Java file using git diff.
+    Returns a list of tuples: (line_number, code_line)
+    """
     try:
-        diff_output = subprocess.run(
-            ["git", "diff", "-U0", file_path],
-            capture_output=True, text=True
-        ).stdout
-
+        diff_output = subprocess.check_output(["git", "diff", "-U0", file_path], universal_newlines=True)
         modified_lines = []
         for line in diff_output.split("\n"):
-            if line.startswith("+") and not line.startswith("++"):
-                modified_lines.append(line[1:])  # Remove leading '+'
+            if line.startswith("@@"):
+                # Extract line number from @@ -old,+new @@
+                match = re.search(r"\+(\d+)", line)
+                if match:
+                    line_num = int(match.group(1))
+            elif line.startswith("+") and not line.startswith("+++"):  # Ignore file headers
+                modified_lines.append((line_num, line[1:]))  # Remove '+' prefix
+                line_num += 1  # Increment line number
+        
+        return modified_lines
+    except subprocess.CalledProcessError:
+        print(f"Error getting git diff for {file_path}")
+        return []
 
-        return "\n".join(modified_lines).strip() if modified_lines else None
-    except Exception as e:
-        print(f"Error fetching modified lines: {e}")
-        return None
-
-def generate_commented_code(changed_code):
-    """ Requests AI to generate comments only for the modified code. """
+def generate_comment(added_code):
+    """ Sends modified Java code to AI and returns the commented version. """
     prompt = f"""
-    You are an expert Java developer. Your task is to add meaningful comments to the provided Java code. 
+    You are an expert Java developer. Your task is to add meaningful comments to the provided Java code snippet.
     - Use JavaDoc-style comments for class and method documentation.
     - Use inline comments to explain important logic.
     - Do NOT modify the existing logic.
     - Return only the modified Java code with comments, without any explanations or additional text.
     - Do NOT wrap the output in triple backticks or any other formatting markers.
 
-
     Java Code:
-    {changed_code}
+    {added_code}
     """
 
     response = client.complete(
-        messages=[
-            SystemMessage("You are an expert Java developer."),
-            UserMessage(prompt),
-        ],
+        messages=[SystemMessage("You are a professional Java developer."), UserMessage(prompt)],
         model="gpt-4o",
         temperature=0.5,
-        max_tokens=2048,
+        max_tokens=1024,
         top_p=1
     )
 
     return response.choices[0].message.content.strip()
 
-def update_java_file(file_path, commented_code):
-    """ Replaces the modified lines with AI-commented versions in the original file. """
-    with open(file_path, "r") as file:
-        original_lines = file.readlines()
+def insert_comments(file_path):
+    """ Inserts AI-generated comments into only the modified lines of the file. """
+    modified_lines = get_modified_lines(file_path)
 
-    modified_lines = commented_code.split("\n")
-    
-    # Replace only modified lines in the original file
-    updated_lines = []
-    i = 0
-    for line in original_lines:
-        if line.strip() in modified_lines:
-            updated_lines.append(modified_lines[i] + "\n")
-            i += 1
-        else:
-            updated_lines.append(line)
+    if not modified_lines:
+        print(f"No modifications detected in {file_path}.")
+        return
+
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+
+    for line_num, code in modified_lines:
+        ai_comment = generate_comment(code)
+        lines.insert(line_num - 1, f"// {ai_comment}\n")  # Insert comment above the modified line
 
     with open(file_path, "w") as file:
-        file.writelines(updated_lines)
+        file.writelines(lines)
 
     print(f"Updated {file_path} with AI-generated comments.")
 
@@ -99,9 +99,4 @@ if __name__ == "__main__":
         print(f"Error: {java_file} not found.")
         sys.exit(1)
 
-    modified_code = get_modified_lines(java_file)
-    if modified_code:
-        commented_code = generate_commented_code(modified_code)
-        update_java_file(java_file, commented_code)
-    else:
-        print(f"No modifications detected in {java_file}.")
+    insert_comments(java_file)
