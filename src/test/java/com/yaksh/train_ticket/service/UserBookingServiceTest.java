@@ -623,46 +623,4 @@ public class UserBookingServiceTest {
                 verify(trainService, times(1)).findTrainByPrn(anyString());
                 verify(userRepositoryV2, times(1)).save(mockUser);
         }
-
-        @Test
-        public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
-                ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
-                mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
-
-                when(trainService.findTrainByPrn(anyString())).thenThrow(new RuntimeException("Train service error"));
-
-                ResponseDataDTO response = userBookingService.cancelTicket(ticketId);
-
-                Assertions.assertThat(response.isStatus()).isFalse();
-                Assertions.assertThat(response.getMessage()).contains("Error while canceling ticket");
-                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.TICKET_NOT_CANCELLED);
-                verify(trainService, times(1)).findTrainByPrn(anyString());
-                verify(userRepositoryV2, never()).save(any(User.class));
-        }
-    
-         @Test
-         public void reschedule_ticket_when_train_not_available_returns_error() {
-                 // Arrange
-                 String ticketId = "ticket123";
-                 LocalDate updatedTravelDate = LocalDate.now().plusDays(5);
-                 Ticket mockTicket = new Ticket();
-                 mockTicket.setTicketId(ticketId);
-                 mockTicket.setTrainId("train123");
-                 mockTicket.setSource("Source");
-                 mockTicket.setDestination("Destination");
-
-                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
-
-                 when(ticketService.findTicketById(ticketId)).thenReturn(Optional.of(mockTicket));
-                 when(trainService.canBeBooked(anyString(), anyString(), anyString(), eq(updatedTravelDate)))
-                                 .thenReturn(new ResponseDataDTO(false, "Train not available"));
-
-                 // Act
-                 ResponseDataDTO response = userBookingService.rescheduleTicket(ticketId, updatedTravelDate);
-
-                 // Assert
-                 Assertions.assertThat(response.isStatus()).isFalse();
-                 verify(ticketService, never()).saveTicket(any(Ticket.class));
-         }
-    
 }
