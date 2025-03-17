@@ -22,27 +22,40 @@ client = ChatCompletionsClient(
     credential=AzureKeyCredential(GITHUB_TOKEN),
 )
 
-def get_modified_lines(file_path):
+def get_modified_line_numbers(file_path):
     """
-    Get only the modified lines from the Java file using git diff.
-    Returns a list of tuples: (line_number, code_line)
+    Get only the modified line numbers from the Java file using git diff.
+    Returns a list of line numbers.
     """
     try:
+        print(f"Running git diff for file: {file_path}")
         diff_output = subprocess.check_output(["git", "diff", "-U0", file_path], universal_newlines=True)
-        modified_lines = []
+        print("Raw git diff output:\n", diff_output)  # Debug: Print raw git diff output
+
+        modified_line_numbers = []
+        line_num = None  # Initialize to prevent reference before assignment
+
         for line in diff_output.split("\n"):
+            print("Processing line:", line)  # Debug: Print each line processed
+
             if line.startswith("@@"):
-                # Extract line number from @@ -old,+new @@
+                # Extract starting line number from @@ -old,+new @@
                 match = re.search(r"\+(\d+)", line)
                 if match:
                     line_num = int(match.group(1))
+                    print(f"Detected modified block starting at line {line_num}")  # Debug: Print detected line number
+
             elif line.startswith("+") and not line.startswith("+++"):  # Ignore file headers
-                modified_lines.append((line_num, line[1:]))  # Remove '+' prefix
-                line_num += 1  # Increment line number
-        
-        return modified_lines
-    except subprocess.CalledProcessError:
-        print(f"Error getting git diff for {file_path}")
+                if line_num is not None:
+                    modified_line_numbers.append(line_num)
+                    print(f"Modified line detected: {line_num}")  # Debug: Print detected modified line number
+                    line_num += 1  # Increment line number
+
+        print("Final modified line numbers list:", modified_line_numbers)  # Debug: Print final modified line numbers list
+        return modified_line_numbers
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error getting git diff for {file_path}: {e}")
         return []
 
 def generate_comment(added_code):
@@ -71,7 +84,7 @@ def generate_comment(added_code):
 
 def insert_comments(file_path):
     """ Inserts AI-generated comments into only the modified lines of the file. """
-    modified_lines = get_modified_lines(file_path)
+    modified_lines = get_modified_line_numbers(file_path)
 
     if not modified_lines:
         print(f"No modifications detected in {file_path}.")

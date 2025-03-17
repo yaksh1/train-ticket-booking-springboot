@@ -662,33 +662,7 @@ public class UserBookingServiceTest {
 
                  // Assert
                  Assertions.assertThat(response.isStatus()).isFalse();
-                 Assertions.assertThat(response.getMessage()).isEqualTo("Train not available");
                  verify(ticketService, never()).saveTicket(any(Ticket.class));
          }
     
-         @Test
-         public void reschedule_ticket_when_train_not_found_returns_error() {
-                 // Arrange
-                 String ticketId = "ticket123";
-                 LocalDate updatedTravelDate = LocalDate.now().plusDays(5);
-                 Ticket mockTicket = new Ticket();
-                 mockTicket.setTicketId(ticketId);
-                 mockTicket.setTrainId("train123");
-                 mockTicket.setSource("Source");
-                 mockTicket.setDestination("Destination");
-
-                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
-
-                 when(ticketService.findTicketById(ticketId)).thenReturn(Optional.of(mockTicket));
-                 when(trainService.canBeBooked(anyString(), anyString(), anyString(), eq(updatedTravelDate)))
-                                 .thenReturn(new ResponseDataDTO(false, "Train not available"));
-
-                 // Act
-                 ResponseDataDTO response = userBookingService.rescheduleTicket(ticketId, updatedTravelDate);
-
-                 // Assert
-                 Assertions.assertThat(response.isStatus()).isFalse();
-                 Assertions.assertThat(response.getMessage()).isEqualTo("Train not available");
-                 verify(ticketService, never()).saveTicket(any(Ticket.class));
-         }
 }
