@@ -623,7 +623,7 @@ public class UserBookingServiceTest {
         }
 
         @Test
-    public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
+        public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
         // Arrange
         ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
         mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
