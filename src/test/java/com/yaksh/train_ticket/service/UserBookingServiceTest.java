@@ -22,6 +22,7 @@ import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -637,5 +638,31 @@ public class UserBookingServiceTest {
                 Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.TICKET_NOT_CANCELLED);
                 verify(trainService, times(1)).findTrainByPrn(anyString());
                 verify(userRepositoryV2, never()).save(any(User.class));
+        }
+    
+         @Test
+    public void reschedule_ticket_when_train_not_available_returns_error() {
+        // Arrange
+        String ticketId = "ticket123";
+        LocalDate updatedTravelDate = LocalDate.now().plusDays(5);
+        Ticket mockTicket = new Ticket();
+        mockTicket.setTicketId(ticketId);
+        mockTicket.setTrainId("train123");
+        mockTicket.setSource("Source");
+        mockTicket.setDestination("Destination");
+
+        ReflectionTestUtils.setField(userBookingService, "loggedInUser", new User());
+
+        when(ticketService.findTicketById(ticketId)).thenReturn(Optional.of(mockTicket));
+        when(trainService.canBeBooked(anyString(), anyString(), anyString(), eq(updatedTravelDate)))
+            .thenReturn(new ResponseDataDTO(false,"Train not available"));
+
+        // Act
+        ResponseDataDTO response = userBookingService.rescheduleTicket(ticketId, updatedTravelDate);
+
+        // Assert
+        Assertions.assertThat(response.isStatus()).isFalse();
+        Assertions.assertThat(response.getMessage()).isEqualTo("Train not available");
+        verify(ticketService, never()).saveTicket(any(Ticket.class));
     }
 }
