@@ -266,15 +266,16 @@ public class UserBookingServiceImpl implements UserBookingService {
             log.warn("Unauthorized ticket rescheduling attempt - no logged in user");
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
-        if(HelperFunctions.isDateInThePast(updatedTravelDate)){
+        if (HelperFunctions.isDateInThePast(updatedTravelDate)) {
             return CommonResponsesDTOs.dateIsInThePastDTO();
         }
         Ticket ticketFound = ticketService.findTicketById(ticketId).orElse(null);
-        if(ticketFound==null){
+        if (ticketFound == null) {
             return CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
         }
         // update the date in the ticket
-        ResponseDataDTO canBeBooked = trainService.canBeBooked(ticketFound.getTrainId(),ticketFound.getSource(),ticketFound.getDestination(),updatedTravelDate);
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(ticketFound.getTrainId(), ticketFound.getSource(),
+                ticketFound.getDestination(), updatedTravelDate);
         if (!canBeBooked.isStatus()) {
             log.warn("travel date update failed for train {}: {}", ticketFound.getTrainId(), canBeBooked.getMessage());
             return canBeBooked;
@@ -284,6 +285,35 @@ public class UserBookingServiceImpl implements UserBookingService {
         // save the ticket in the DB
         log.info("Saving the ticket in the database");
         ticketService.saveTicket(ticketFound);
-        return new ResponseDataDTO(true,"Travel date updated successfully");
+        return new ResponseDataDTO(true, "Travel date updated successfully");
+    }
+    
+    
+    public ResponseDataDTO rescheduleTicketV2(String ticketId, LocalDate updatedTravelDate) {
+        // If user is not logged in, return an error
+        if (loggedInUser == null) {
+            log.warn("Unauthorized ticket rescheduling attempt - no logged in user");
+            return CommonResponsesDTOs.userNotLoggedInDTO();
+        }
+        if (HelperFunctions.isDateInThePast(updatedTravelDate)) {
+            return CommonResponsesDTOs.dateIsInThePastDTO();
+        }
+        Ticket ticketFound = ticketService.findTicketById(ticketId).orElse(null);
+        if (ticketFound == null) {
+            return CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
+        }
+        // update the date in the ticket
+        ResponseDataDTO canBeBooked = trainService.canBeBooked(ticketFound.getTrainId(), ticketFound.getSource(),
+                ticketFound.getDestination(), updatedTravelDate);
+        if (!canBeBooked.isStatus()) {
+            log.warn("travel date update failed for train {}: {}", ticketFound.getTrainId(), canBeBooked.getMessage());
+            return canBeBooked;
+        }
+        log.info("Updating the travel date in the ticket: {}", updatedTravelDate);
+        ticketFound.setDateOfTravel(updatedTravelDate);
+        // save the ticket in the DB
+        log.info("Saving the ticket in the database");
+        ticketService.saveTicket(ticketFound);
+        return new ResponseDataDTO(true, "Travel date updated successfully");
     }
 }
