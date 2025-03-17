@@ -618,25 +618,23 @@ public class UserBookingServiceTest {
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
                 Assertions.assertThat(response.getMessage()).contains("Error while canceling ticket");
+                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.TICKET_NOT_CANCELLED);
                 verify(trainService, times(1)).findTrainByPrn(anyString());
                 verify(userRepositoryV2, times(1)).save(mockUser);
         }
 
         @Test
         public void userBookingService_cancelTicket_ExceptionDuringTrainService() {
-                // Arrange
                 ReflectionTestUtils.setField(userBookingService, "loggedInUser", mockUser);
                 mockUser.setTicketsBooked(new ArrayList<>(List.of(mockTicket)));
 
-                // Mocking dependencies
                 when(trainService.findTrainByPrn(anyString())).thenThrow(new RuntimeException("Train service error"));
 
-                // Act
                 ResponseDataDTO response = userBookingService.cancelTicket(ticketId);
 
-                // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
                 Assertions.assertThat(response.getMessage()).contains("Error while canceling ticket");
+                Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.TICKET_NOT_CANCELLED);
                 verify(trainService, times(1)).findTrainByPrn(anyString());
                 verify(userRepositoryV2, never()).save(any(User.class));
     }
