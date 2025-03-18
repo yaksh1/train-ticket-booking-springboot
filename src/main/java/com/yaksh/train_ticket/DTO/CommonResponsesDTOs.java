@@ -12,7 +12,7 @@ public class CommonResponsesDTOs {
     }
 
     public static ResponseDataDTO trainDoesNotExistDTO(String prn){
-        return new ResponseDataDTO(false,ResponseStatus.TRAIN_DOES_NOT_EXISTS,"Train does not exist with prn: " + prn);
+        return new ResponseDataDTO(false,ResponseStatus.TRAIN_NOT_FOUND,"Train does not exist with prn: " + prn);
     }
     public static ResponseDataDTO ticketNotFoundDTO(String ticketId){
         return new ResponseDataDTO(false,ResponseStatus.TICKET_NOT_FOUND,String.format("Ticket ID: %s not found",ticketId));
