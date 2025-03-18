@@ -1,6 +1,5 @@
 package com.yaksh.train_ticket.service;
 
-import com.yaksh.train_ticket.DTO.CommonResponsesDTOs;
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.enums.ResponseStatus;
 import com.yaksh.train_ticket.exceptions.CustomException;
