@@ -1,15 +1,33 @@
 package com.yaksh.train_ticket.exceptions;
 
 import com.yaksh.train_ticket.enums.ResponseStatus;
+
+/**
+ * CustomException is a custom runtime exception class that encapsulates
+ * an error message and a specific error code of type ResponseStatus.
+ */
 public class CustomException extends RuntimeException {
+    // Holds the error code associated with this exception
     private final ResponseStatus errorCode;
 
-    public CustomException(String message,ResponseStatus errorCode) {
-      super(message);
-      this.errorCode = errorCode;
+    /**
+     * Constructs a new CustomException with the specified detail message
+     * and error code.
+     *
+     * @param message   The detail message for the exception.
+     * @param errorCode The error code of type ResponseStatus associated with the exception.
+     */
+    public CustomException(String message, ResponseStatus errorCode) {
+        super(message); // Call the parent class constructor to set the exception message
+        this.errorCode = errorCode; // Initialize the error code
     }
 
-    public  ResponseStatus getErrorCode() {
-      return errorCode;
+    /**
+     * Retrieves the error code associated with this exception.
+     *
+     * @return The error code of type ResponseStatus.
+     */
+    public ResponseStatus getErrorCode() {
+        return errorCode; // Return the stored error code
     }
 }
