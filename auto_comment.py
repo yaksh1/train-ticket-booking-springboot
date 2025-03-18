@@ -1,16 +1,15 @@
 import os
 import sys
-import re
 from dotenv import load_dotenv
-import subprocess
+import re
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()  # Ensure it's a string
 
 if not GITHUB_TOKEN:
     print("Error: GITHUB_TOKEN is not set. Make sure you have a .env file.")
@@ -19,88 +18,70 @@ if not GITHUB_TOKEN:
 # Set up Azure AI client
 client = ChatCompletionsClient(
     endpoint="https://models.inference.ai.azure.com",
-    credential=AzureKeyCredential(GITHUB_TOKEN),
+    credential=AzureKeyCredential(GITHUB_TOKEN),  # Set your token as an environment variable
 )
 
-def get_modified_line_numbers(file_path):
-    """
-    Get only the modified line numbers from the Java file using git diff.
-    Returns a list of line numbers.
-    """
-    try:
-        print(f"Running git diff for file: {file_path}")
-        diff_output = subprocess.check_output(["git", "diff", "-U0", file_path], universal_newlines=True)
-        print("Raw git diff output:\n", diff_output)  # Debug: Print raw git diff output
-
-        modified_line_numbers = []
-        line_num = None  # Initialize to prevent reference before assignment
-
-        for line in diff_output.split("\n"):
-            print("Processing line:", line)  # Debug: Print each line processed
-
-            if line.startswith("@@"):
-                # Extract starting line number from @@ -old,+new @@
-                match = re.search(r"\+(\d+)", line)
-                if match:
-                    line_num = int(match.group(1))
-                    print(f"Detected modified block starting at line {line_num}")  # Debug: Print detected line number
-
-            elif line.startswith("+") and not line.startswith("+++"):  # Ignore file headers
-                if line_num is not None:
-                    modified_line_numbers.append(line_num)
-                    print(f"Modified line detected: {line_num}")  # Debug: Print detected modified line number
-                    line_num += 1  # Increment line number
-
-        print("Final modified line numbers list:", modified_line_numbers)  # Debug: Print final modified line numbers list
-        return modified_line_numbers
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error getting git diff for {file_path}: {e}")
-        return []
-
-def generate_comment(added_code):
-    """ Sends modified Java code to AI and returns the commented version. """
+def generate_commented_code(java_code):
+    """ Sends the Java file to AI and retrieves only the commented version, ensuring no extra text. """
     prompt = f"""
-    You are an expert Java developer. Your task is to add meaningful comments to the provided Java code snippet.
+    You are an expert Java developer. Your task is to add meaningful comments to the given Java code. 
     - Use JavaDoc-style comments for class and method documentation.
     - Use inline comments to explain important logic.
-    - Do NOT modify the existing logic.
-    - Return only the modified Java code with comments, without any explanations or additional text.
+    - Do NOT modify or rewrite the logic of the code.
+    - DO NOT stop in between the code and ALWAYS provide the whole code in the file
+    - IF you are NOT able to process the whole file make sure you return the file unchanged
+    - Do NOT add any explanations, summaries, or unnecessary text outside the comments.
+    - Return ONLY the modified Java code with comments added, without any extra formatting or explanations.
     - Do NOT wrap the output in triple backticks or any other formatting markers.
 
     Java Code:
-    {added_code}
+    {java_code}
     """
 
     response = client.complete(
-        messages=[SystemMessage("You are a professional Java developer."), UserMessage(prompt)],
+        messages=[
+            SystemMessage("You are an expert Java developer who writes professional and meaningful comments."),
+            UserMessage(prompt),
+        ],
         model="gpt-4o",
         temperature=0.5,
-        max_tokens=1024,
+        max_tokens=4096,
         top_p=1
     )
 
-    return response.choices[0].message.content.strip()
+    commented_code = response.choices[0].message.content.strip()
 
-def insert_comments(file_path):
-    """ Inserts AI-generated comments into only the modified lines of the file. """
-    modified_lines = get_modified_line_numbers(file_path)
+    # Remove any triple backticks and potential "java" syntax markers added by the AI
+    commented_code = re.sub(r"^```java\s*", "", commented_code)  # Remove leading ```java
+    commented_code = re.sub(r"\s*```$", "", commented_code)  # Remove trailing ```
 
-    if not modified_lines:
-        print(f"No modifications detected in {file_path}.")
-        return
+    return commented_code
 
+def process_java_file(file_path):
+    """ Reads the entire Java file, sends it to AI, and writes back only the commented version. """
     with open(file_path, "r") as file:
-        lines = file.readlines()
+        java_code = file.read()
 
-    for line_num, code in modified_lines:
-        ai_comment = generate_comment(code)
-        lines.insert(line_num - 1, f"// {ai_comment}\n")  # Insert comment above the modified line
+    print(f"Processing file: {file_path}")
+
+    commented_code = generate_commented_code(java_code)
+
+    # Ensure no AI explanations are mistakenly included
+    unwanted_text_patterns = [
+        "### Explanation",  
+        "This rewritten version",  
+        "Improvements made",  
+        "Enhancements:",  
+    ]
+    
+    for pattern in unwanted_text_patterns:
+        if pattern in commented_code:
+            commented_code = commented_code.split(pattern, 1)[0].strip()  # Remove any unwanted explanations
 
     with open(file_path, "w") as file:
-        file.writelines(lines)
+        file.write(commented_code)
 
-    print(f"Updated {file_path} with AI-generated comments.")
+    print(f"Updated {file_path} with AI-generated comments, without unnecessary explanations or formatting.")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -112,4 +93,4 @@ if __name__ == "__main__":
         print(f"Error: {java_file} not found.")
         sys.exit(1)
 
-    insert_comments(java_file)
+    process_java_file(java_file)
