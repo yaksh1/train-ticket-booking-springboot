@@ -17,6 +17,4 @@ public class ErrorDetails {
   private int statusCode;
   private String errorCode;
   private LocalDateTime timeStamp;
-  
-  
 }
