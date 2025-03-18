@@ -35,6 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
-.qodo
+.qodo/
 # Ignore .env file
 .env

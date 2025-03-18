@@ -34,6 +34,8 @@ public ResponseEntity<ErrorDetails> handleGlobalException(Exception ex) {
         .build();
 
     return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+
+    
 }
 
 }
