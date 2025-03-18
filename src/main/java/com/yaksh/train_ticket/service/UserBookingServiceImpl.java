@@ -2,11 +2,14 @@ package com.yaksh.train_ticket.service;
 import com.yaksh.train_ticket.DTO.CommonResponsesDTOs;
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.enums.ResponseStatus;
+import com.yaksh.train_ticket.exceptions.CustomException;
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.UserRepositoryV2;
 import com.yaksh.train_ticket.util.UserServiceUtil;
+import com.yaksh.train_ticket.util.ValidationChecks;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -51,23 +54,23 @@ public class UserBookingServiceImpl implements UserBookingService {
     @Override
     public ResponseDataDTO loginUser(String userName, String password) {
         log.info("Login attempt for user: {}", userName);
-        return userRepositoryV2.findByUserName(userName.toLowerCase())
-                .map(user -> userServiceUtil.checkPassword(password, user.getHashedPassword())
-                        ? new ResponseDataDTO(true, "User Found", user)
-                        // user is found but password not correct
-                        : new ResponseDataDTO(false, ResponseStatus.PASSWORD_INCORRECT, "Password Incorrect"))
-                .orElse(new ResponseDataDTO(false, ResponseStatus.USER_NOT_FOUND, "User Not Found"));
+            return userRepositoryV2.findByUserName(userName.toLowerCase())
+                    .map(user -> {
+                        if (!userServiceUtil.checkPassword(password, user.getHashedPassword())) {
+                            throw new CustomException(ResponseStatus.PASSWORD_INCORRECT);
+                        }
+                        return new ResponseDataDTO(true, "User Found", user);
+                    })
+                    .orElseThrow(()-> new CustomException(ResponseStatus.USER_NOT_FOUND));
     }
 
     @Override
     public ResponseDataDTO signupUser(String userName, String password) {
         log.info("Signup attempt for user: {}", userName);
-        // checking if user already exists with the username provided
-        Optional<User> userFound = userRepositoryV2.findByUserName(userName.toLowerCase());
         // if user already exists return false
-        if (userFound.isPresent()) {
+        if (!ValidationChecks.isUserPresent(userName)) {
             log.warn("Signup failed - user already exists: {}", userName);
-            return new ResponseDataDTO(false, ResponseStatus.USER_ALREADY_EXISTS, "User Already Exists");
+            throw new CustomException(ResponseStatus.USER_ALREADY_EXISTS);
         }
         try {
             User user = new User(UUID.randomUUID().toString(), userName,
@@ -78,8 +81,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             return new ResponseDataDTO(true, "User Saved in the collection", savedUser);
         } catch (Exception e) {
             log.error("Error while saving user in the collection: {}", e.getMessage(), e);
-            return new ResponseDataDTO(false, ResponseStatus.USER_NOT_SAVED_IN_COLLECTION,
-                    "Error while saving user in the collection: " + e.getMessage());
+            throw new CustomException("Error while saving user in the collection: " + e.getMessage(),ResponseStatus.USER_NOT_SAVED_IN_COLLECTION);
         }
     }
 
@@ -103,33 +105,24 @@ public class UserBookingServiceImpl implements UserBookingService {
         // if user is not logged in then false
         if (loggedInUser == null) {
             log.warn("Unauthorized booking attempt - no logged in user");
-            return CommonResponsesDTOs.userNotLoggedInDTO();
+                    throw new CustomException("Please log in to book the ticket", ResponseStatus.USER_NOT_FOUND);
+
         }
 
         // if date selected is in the past
         if (dateOfTravel.isBefore(LocalDate.now())){
-            return CommonResponsesDTOs.dateIsInThePastDTO();
+                    throw new CustomException("Date of travel cannot be in the past", ResponseStatus.INVALID_DATA);
+
         }
 
 
         ResponseDataDTO canBeBooked = trainService.canBeBooked(trainPrn,source,destination,dateOfTravel);
-        // if train cannot be booked then return false
-        if (!canBeBooked.isStatus()) {
-            log.warn("Booking failed for train {}: {}", trainPrn, canBeBooked.getMessage());
-            return canBeBooked;
-        }
 
         //get train data
         Train train = (Train) canBeBooked.getData();
 
         // Are seats available
         ResponseDataDTO availableSeatsDTO = trainService.areSeatsAvailable(train, numberOfSeatsToBeBooked,dateOfTravel);
-
-        // if seats are not available then return
-        if (!availableSeatsDTO.isStatus()) {
-            log.warn("Not enough seats available in train {}: {}", trainPrn, availableSeatsDTO.getMessage());
-            return availableSeatsDTO;
-        }
 
         List<List<Integer>> allSeats = train.getSeats().get(dateOfTravel.toString());
 
@@ -139,9 +132,9 @@ public class UserBookingServiceImpl implements UserBookingService {
             availableSeatsList = (List<List<Integer>>) data;
         } else {
             log.warn("Unexpected data type received for available seats: {}", data.getClass());
-            return new ResponseDataDTO(false, ResponseStatus.INVALID_DATA, "Invalid seat data received.");
-        }
+            throw new CustomException("Invalid seat data received.", ResponseStatus.INVALID_DATA);
 
+        }
 
         // book seats (get row and col from availableSeatsLists and make it 1)
         trainService.bookSeats(availableSeatsList,allSeats);
@@ -159,8 +152,9 @@ public class UserBookingServiceImpl implements UserBookingService {
                     trainService.getArrivalAtSourceTime(train,source,dateOfTravel),
                     trainService.getArrivalAtSourceTime(train,destination,dateOfTravel)
                     );
-            if(ticket==null){
-                return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_BOOKED, "Error while booking ticket: not saved in the DB");
+                    if (ticket == null) {
+                        throw new CustomException("Error while booking ticket: not saved in the DB",
+                                ResponseStatus.TICKET_NOT_BOOKED);
             }
             // update the user ticket list
             loggedInUser.getTicketsBooked().add(ticket);
@@ -174,7 +168,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             return new ResponseDataDTO(true, "Ticket Booked with ID: " + ticket.getTicketId(), ticket);
         } catch (Exception e) {
             log.error("Error while booking ticket: {}", e.getMessage(), e);
-            return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_BOOKED, "Error while booking ticket: " + e.getMessage());
+            throw new CustomException( "Error while booking ticket: " + e.getMessage(), ResponseStatus.TICKET_NOT_BOOKED);
         }
     }
 
@@ -184,7 +178,8 @@ public class UserBookingServiceImpl implements UserBookingService {
         // if user is not logged in then false
         if (loggedInUser == null) {
             log.warn("Unauthorized ticket fetch attempt - no logged in user");
-            return CommonResponsesDTOs.userNotLoggedInDTO();
+                    throw new CustomException("Please log in to book the ticket", ResponseStatus.USER_NOT_FOUND);
+
         }
         return new ResponseDataDTO(true, "Tickets fetched", loggedInUser.getTicketsBooked());
     }
@@ -196,7 +191,8 @@ public class UserBookingServiceImpl implements UserBookingService {
         // If user is not logged in, return an error
         if (loggedInUser == null) {
             log.warn("Unauthorized ticket cancellation attempt - no logged in user");
-            return CommonResponsesDTOs.userNotLoggedInDTO();
+                    throw new CustomException("Please log in to book the ticket", ResponseStatus.USER_NOT_FOUND);
+
         }
 
         try {
@@ -234,10 +230,12 @@ public class UserBookingServiceImpl implements UserBookingService {
             }
 
             log.warn("Ticket not found: {}", idOfTicketToCancel);
-            return CommonResponsesDTOs.ticketNotFoundDTO(idOfTicketToCancel);
+            throw new CustomException(String.format("Ticket ID: %s not found", idOfTicketToCancel),
+                    ResponseStatus.TICKET_NOT_FOUND);
+
         } catch (Exception e) {
             log.error("Error while canceling ticket: {}", e.getMessage(), e);
-            return new ResponseDataDTO(false, ResponseStatus.TICKET_NOT_CANCELLED, "Error while canceling ticket: " + e.getMessage());
+            throw new CustomException( "Error while canceling ticket: " + e.getMessage(), ResponseStatus.TICKET_NOT_CANCELLED);
         }
     }
 
@@ -247,13 +245,16 @@ public class UserBookingServiceImpl implements UserBookingService {
         // if user is not logged in then false
         if (loggedInUser == null) {
             log.warn("Unauthorized ticket fetch attempt - no logged in user");
-            return CommonResponsesDTOs.userNotLoggedInDTO();
+                    throw new CustomException("Please log in to book the ticket", ResponseStatus.USER_NOT_FOUND);
+
         }
 
         Ticket ticketFound = ticketService.findTicketById(idOfTicketToFind).orElse(null);
         if (ticketFound == null) {
             log.warn("Ticket not found: {}", idOfTicketToFind);
-            return CommonResponsesDTOs.ticketNotFoundDTO(idOfTicketToFind);
+            throw new CustomException(String.format("Ticket ID: %s not found", idOfTicketToFind),
+                    ResponseStatus.TICKET_NOT_FOUND);
+
         }
         return new ResponseDataDTO(true, "Ticket found", ticketFound);
     }
@@ -263,22 +264,23 @@ public class UserBookingServiceImpl implements UserBookingService {
         // If user is not logged in, return an error
         if (loggedInUser == null) {
             log.warn("Unauthorized ticket rescheduling attempt - no logged in user");
-            return CommonResponsesDTOs.userNotLoggedInDTO();
+                    throw new CustomException("Please log in to book the ticket", ResponseStatus.USER_NOT_FOUND);
+
         }
         if (updatedTravelDate.isBefore(LocalDate.now())) {
-            return CommonResponsesDTOs.dateIsInThePastDTO();
+                    throw new CustomException("Date of travel cannot be in the past", ResponseStatus.INVALID_DATA);
+
         }
         Ticket ticketFound = ticketService.findTicketById(ticketId).orElse(null);
         if (ticketFound == null) {
-            return CommonResponsesDTOs.ticketNotFoundDTO(ticketId);
+            throw new CustomException(String.format("Ticket ID: %s not found", ticketId),
+                    ResponseStatus.TICKET_NOT_FOUND);
+
         }
+        // check if can be booked or not
+        trainService.canBeBooked(ticketFound.getTrainId(), ticketFound.getSource(),
+        ticketFound.getDestination(), updatedTravelDate);
         // update the date in the ticket
-        ResponseDataDTO canBeBooked = trainService.canBeBooked(ticketFound.getTrainId(), ticketFound.getSource(),
-                ticketFound.getDestination(), updatedTravelDate);
-        if (!canBeBooked.isStatus()) {
-            log.warn("travel date update failed for train {}: {}", ticketFound.getTrainId(), canBeBooked.getMessage());
-            return canBeBooked;
-        }
         log.info("Updating the travel date in the ticket: {}", updatedTravelDate);
         ticketFound.setDateOfTravel(updatedTravelDate);
         // save the ticket in the DB

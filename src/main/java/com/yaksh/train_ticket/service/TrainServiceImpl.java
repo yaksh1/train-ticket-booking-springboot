@@ -4,6 +4,7 @@ package com.yaksh.train_ticket.service;
 import com.yaksh.train_ticket.DTO.CommonResponsesDTOs;
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
 import com.yaksh.train_ticket.enums.ResponseStatus;
+import com.yaksh.train_ticket.exceptions.CustomException;
 import com.yaksh.train_ticket.model.StationSchedule;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.repository.TrainRepositoryV2;
@@ -39,7 +40,7 @@ public class TrainServiceImpl implements TrainService {
         try {
             // Check if a train with the same PRN already exists
             if (trainServiceUtil.doesTrainExist(newTrain.getPrn(), trainRepositoryV2)) {
-                return new ResponseDataDTO(false, ResponseStatus.TRAIN_ALREADY_EXISTS, "Train added in the collection");
+                throw new CustomException( ResponseStatus.TRAIN_ALREADY_EXISTS);
             }
 
             // Save the new train to the repository
@@ -48,7 +49,8 @@ public class TrainServiceImpl implements TrainService {
             return new ResponseDataDTO(true, "Train added in the collection", newTrain);
         } catch (Exception e) {
             log.error("Error adding train {}: {}", newTrain.getPrn(), e.getMessage(), e);
-            return CommonResponsesDTOs.trainNotAddedToCollectionDTO(e.getMessage());
+            throw new CustomException("Error while saving the train: " + e.getMessage(),
+                    ResponseStatus.TRAIN_NOT_SAVED_IN_COLLECTION);
         }
     }
 
@@ -79,7 +81,8 @@ public class TrainServiceImpl implements TrainService {
             return new ResponseDataDTO(true, "Trains added in the collection except trains with PRN: " + existingTrainPrns, newTrainsToAdd);
         } catch (Exception e) {
             log.error("Error adding multiple trains: {}", e.getMessage(), e);
-            return CommonResponsesDTOs.trainNotAddedToCollectionDTO(e.getMessage());
+            throw new CustomException("Error while saving the train: " + e.getMessage(),
+                    ResponseStatus.TRAIN_NOT_SAVED_IN_COLLECTION);
         }
     }
 
@@ -99,7 +102,7 @@ public class TrainServiceImpl implements TrainService {
             return new ResponseDataDTO(true, "Train updated in the collection", updatedTrain);
         } catch (Exception e) {
             log.error("Error updating train {}: {}", updatedTrain.getPrn(), e.getMessage(), e);
-            return new ResponseDataDTO(false, ResponseStatus.TRAIN_UPDATING_FAILED, "Error while updating train: " + e.getMessage());
+            throw new CustomException("Error while updating train: " + e.getMessage(),ResponseStatus.TRAIN_UPDATING_FAILED);
         }
     }
 
@@ -171,7 +174,8 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO getTrainSchedule(String trainPrn, LocalDate travelDate) {
         Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
         if (train == null) {
-            return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
+            throw new CustomException("Train does not exist with PRN: " + trainPrn, ResponseStatus.TRAIN_NOT_FOUND);
+
         }
         return new ResponseDataDTO(true, String.format("Schedule of train %s fetched successfully", trainPrn), train.getSchedules().get(travelDate.toString()));
     }
@@ -187,7 +191,8 @@ public class TrainServiceImpl implements TrainService {
     public ResponseDataDTO getSeatsAtParticularDate(String trainPrn, LocalDate travelDate) {
         Train train = trainRepositoryV2.findById(trainPrn).orElse(null);
         if (train == null) {
-            return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
+            throw new CustomException("Train does not exist with PRN: " + trainPrn, ResponseStatus.TRAIN_NOT_FOUND);
+
         }
         return new ResponseDataDTO(true, String.format("Seats of train %s fetched successfully", trainPrn), train.getSeats().get(travelDate.toString()));
     }
@@ -236,13 +241,14 @@ public class TrainServiceImpl implements TrainService {
         // Train not found
         if (train == null) {
             log.warn("Train not found: {}", trainPrn);
-            return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
+            throw new CustomException("Train does not exist with PRN: " + trainPrn, ResponseStatus.TRAIN_NOT_FOUND);
         }
 
         // Validate if the train aligns with the given source, destination, and travel date
         boolean validTrain = trainServiceUtil.validTrain(source, destination, travelDate, train);
         if (!validTrain) {
-            return new ResponseDataDTO(false, "Can not be Booked: Source and destination do not align with train data");
+            throw new CustomException(
+                    "Can not be Booked: Source and destination do not align with train data", ResponseStatus.INVALID_DATA);
         }
 
         log.info("Train {} can be booked", trainPrn);
@@ -280,7 +286,8 @@ public class TrainServiceImpl implements TrainService {
         // If the requested number of seats exceeds the total number of seats
         if (numberOfSeatsToBeBooked > totalSeats) {
             log.warn("Not enough seats available in train {}: requested {} seats, total seats {}", train.getPrn(), numberOfSeatsToBeBooked, totalSeats);
-            return CommonResponsesDTOs.notEnoughSeatsDTO();
+                    throw new CustomException("Not enough seats available", ResponseStatus.NOT_ENOUGH_SEATS);
+
         }
 
         int foundContinuousSeats = 0;
@@ -327,6 +334,7 @@ public class TrainServiceImpl implements TrainService {
 
         // Not enough seats found
         log.warn("Not enough seats available in train {}: requested {} seats, found {} seats", train.getPrn(), numberOfSeatsToBeBooked, foundSeats);
-        return CommonResponsesDTOs.notEnoughSeatsDTO();
+        throw new CustomException("Not enough seats available", ResponseStatus.NOT_ENOUGH_SEATS);
+
     }
 }

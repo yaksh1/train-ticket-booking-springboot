@@ -1,27 +1,32 @@
 package com.yaksh.train_ticket.DTO;
 
 import com.yaksh.train_ticket.enums.ResponseStatus;
+import com.yaksh.train_ticket.exceptions.CustomException;
 
 public class CommonResponsesDTOs {
-    public static ResponseDataDTO userNotLoggedInDTO(){
-        return new ResponseDataDTO(false, ResponseStatus.USER_NOT_FOUND,"Please log in to book the ticket");
+    public static void userNotLoggedInDTO() {
+        throw new CustomException("Please log in to book the ticket", ResponseStatus.USER_NOT_FOUND);
     }
 
-    public static ResponseDataDTO notEnoughSeatsDTO(){
-        return new ResponseDataDTO(false, ResponseStatus.NOT_ENOUGH_SEATS,"Not enough seats available");
+    public static void notEnoughSeatsDTO() {
+        throw new CustomException("Not enough seats available", ResponseStatus.NOT_ENOUGH_SEATS);
     }
 
-    public static ResponseDataDTO trainDoesNotExistDTO(String prn){
-        return new ResponseDataDTO(false,ResponseStatus.TRAIN_NOT_FOUND,"Train does not exist with prn: " + prn);
+    public static void trainDoesNotExistDTO(String prn) {
+        throw new CustomException("Train does not exist with PRN: " + prn, ResponseStatus.TRAIN_NOT_FOUND);
     }
-    public static ResponseDataDTO ticketNotFoundDTO(String ticketId){
-        return new ResponseDataDTO(false,ResponseStatus.TICKET_NOT_FOUND,String.format("Ticket ID: %s not found",ticketId));
+
+    public static void ticketNotFoundDTO(String ticketId) {
+        throw new CustomException(String.format("Ticket ID: %s not found", ticketId), ResponseStatus.TICKET_NOT_FOUND);
     }
-    public static ResponseDataDTO trainNotAddedToCollectionDTO(String message){
-        return new ResponseDataDTO(false,ResponseStatus.TRAIN_NOT_SAVED_IN_COLLECTION,"Error while saving the train: "+message);
+
+    public static void trainNotAddedToCollectionDTO(String message) {
+        throw new CustomException("Error while saving the train: " + message,
+                ResponseStatus.TRAIN_NOT_SAVED_IN_COLLECTION);
     }
-    public static ResponseDataDTO dateIsInThePastDTO(){
-        return new ResponseDataDTO(false, ResponseStatus.INVALID_DATA, "Date of travel cannot be in the past");
+
+    public static void dateIsInThePastDTO() {
+        throw new CustomException("Date of travel cannot be in the past", ResponseStatus.INVALID_DATA);
     }
 
 

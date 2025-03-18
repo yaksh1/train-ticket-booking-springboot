@@ -1,6 +1,8 @@
 package com.yaksh.train_ticket.service;
 
 import com.yaksh.train_ticket.DTO.ResponseDataDTO;
+import com.yaksh.train_ticket.enums.ResponseStatus;
+import com.yaksh.train_ticket.exceptions.CustomException;
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.repository.TicketRepositoryV2;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +44,8 @@ public class TicketServiceImpl implements TicketService {
         } catch (Exception e) {
             // Log any exceptions that occur during the save operation.
             log.error("Error while saving ticket: {}", e.getMessage());
-            return null;
+            throw new CustomException("Error while saving ticket: "+e.getMessage(),
+                    ResponseStatus.TICKET_NOT_SAVED_IN_COLLECTION);
         }
     }
 

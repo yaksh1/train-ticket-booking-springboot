@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
         // Creating an ErrorDetails object with relevant information about the exception
         ErrorDetails errorDetails = ErrorDetails.builder()
             .status(ex.getErrorCode().getHttpStatus().name()) // HTTP status as a string
-            .errorMessage(ex.getMessage()) // Error message from the exception
+            .errorMessage(ex.getMessage() == null?  ex.getErrorCode().getMessage():ex.getMessage()) // Error message from the exception
             .statusCode(ex.getErrorCode().getHttpStatus().value()) // HTTP status code as an integer
             .errorCode(ex.getErrorCode().name()) // Custom error code
             .timeStamp(LocalDateTime.now()) // Current timestamp

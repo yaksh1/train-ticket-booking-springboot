@@ -8,7 +8,8 @@ import com.yaksh.train_ticket.enums.ResponseStatus;
  */
 public class CustomException extends RuntimeException {
     // Holds the error code associated with this exception
-    private final ResponseStatus errorCode;
+    private ResponseStatus errorCode;
+    private String message;
 
     /**
      * Constructs a new CustomException with the specified detail message
@@ -17,9 +18,13 @@ public class CustomException extends RuntimeException {
      * @param message   The detail message for the exception.
      * @param errorCode The error code of type ResponseStatus associated with the exception.
      */
+    public CustomException(ResponseStatus errorCode) {
+      this.errorCode = errorCode; // Initialize the error code
+    }
+    
     public CustomException(String message, ResponseStatus errorCode) {
-        super(message); // Call the parent class constructor to set the exception message
-        this.errorCode = errorCode; // Initialize the error code
+      this.message = message;
+      this.errorCode = errorCode; 
     }
 
     /**
@@ -28,6 +33,10 @@ public class CustomException extends RuntimeException {
      * @return The error code of type ResponseStatus.
      */
     public ResponseStatus getErrorCode() {
-        return errorCode; // Return the stored error code
+      return errorCode; // Return the stored error code
+    }
+    
+    public String getMessage() {
+      return message;
     }
 }
