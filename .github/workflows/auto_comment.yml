@@ -29,7 +29,7 @@ jobs:
       - name: Load Environment Variables
         run: echo "GITHUB_TOKEN=${{ secrets.AUTO_COMMENT_TOKEN }}" > .env
 
-      - name: Find Modified Java Files (Exclude Deleted)
+      - name: Find Modified Java Files (Exclude Deleted & Test Files)
         id: changed_files
         run: |
           if git rev-parse HEAD~1 >/dev/null 2>&1; then
@@ -42,17 +42,26 @@ jobs:
           # Get list of changed Java files (excluding deleted)
           CHANGED_FILES=$(git diff --name-only --diff-filter=d "$PREV_COMMIT" "$LAST_COMMIT" -- '*.java')
 
-          if [[ -z "$CHANGED_FILES" ]]; then
-            echo "No Java files changed."
+          FILTERED_FILES=""
+          for file in $CHANGED_FILES; do
+            if [[ "$file" =~ [Tt][Ee][Ss][Tt] ]]; then
+              echo "Skipping test file: $file"
+            else
+              FILTERED_FILES+="$file"$'\n'
+            fi
+          done
+
+          if [[ -z "$FILTERED_FILES" ]]; then
+            echo "No valid Java files to process."
             echo "changed_files=" >> "$GITHUB_ENV"
           else
             echo "Modified Java files:"
-            echo "$CHANGED_FILES"
+            echo "$FILTERED_FILES"
             
-            # Correctly set environment variable with multiple lines
+            # Set environment variable correctly with multiple lines
             {
               echo "changed_files<<EOF"
-              echo "$CHANGED_FILES"
+              echo "$FILTERED_FILES"
               echo "EOF"
             } >> "$GITHUB_ENV"
           fi
