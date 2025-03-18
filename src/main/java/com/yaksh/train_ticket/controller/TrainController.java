@@ -5,6 +5,8 @@ import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.service.TrainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -18,22 +20,22 @@ public class TrainController {
     private final TrainService trainService;
 
     @GetMapping("/searchTrains")
-    public ResponseDataDTO searchTrains(@RequestParam String source, @RequestParam String destination, @RequestParam LocalDate travelDate){
-        return trainService.searchTrains(source,destination,travelDate);
+    public ResponseEntity<ResponseDataDTO> searchTrains(@RequestParam String source, @RequestParam String destination, @RequestParam LocalDate travelDate){
+        return ResponseEntity.ok(trainService.searchTrains(source, destination, travelDate));
     }
 
     @PostMapping("/addTrain")
-    public ResponseDataDTO addTrain(@RequestBody Train newTrain){
-        return trainService.addTrain(newTrain);
+    public ResponseEntity<ResponseDataDTO> addTrain(@RequestBody Train newTrain){
+        return ResponseEntity.ok(trainService.addTrain(newTrain));
     }
 
     @PostMapping("/addMultipleTrains")
-    public ResponseDataDTO addMultipleTrains(@RequestBody List<Train> newTrains){
-        return trainService.addMultipleTrains(newTrains);
+    public ResponseEntity<ResponseDataDTO> addMultipleTrains(@RequestBody List<Train> newTrains){
+        return ResponseEntity.ok(trainService.addMultipleTrains(newTrains));
     }
     @PostMapping("/updateTrain")
-    public ResponseDataDTO updateTrain(@RequestBody Train updatedTrain){
-        return trainService.updateTrain(updatedTrain);
+    public ResponseEntity<ResponseDataDTO> updateTrain(@RequestBody Train updatedTrain){
+        return ResponseEntity.ok(trainService.updateTrain(updatedTrain));
     }
 
 

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,46 +27,47 @@ public class UserController {
     private UserBookingService service;
 
     @PostMapping("/loginUser")
-    public ResponseDataDTO loginUser(@RequestParam  String userName,@RequestParam String password){
+    public ResponseEntity<ResponseDataDTO> loginUser(@RequestParam  String userName,@RequestParam String password){
         ResponseDataDTO responseDataDTO = service.loginUser(userName,password);
 
         if(responseDataDTO.isStatus()){
             service.setLoggedInUser((User) responseDataDTO.getData());
         }
-        return responseDataDTO;
+        return ResponseEntity.ok(responseDataDTO);
     }
 
     @PostMapping("/signupUser")
-    public ResponseDataDTO signupUser(@RequestParam  String userName,@RequestParam String password){
-        return service.signupUser(userName,password);
+    public ResponseEntity<ResponseDataDTO> signupUser(@RequestParam  String userName,@RequestParam String password){
+        return ResponseEntity.ok(service.signupUser(userName, password));
     }
     @PostMapping("/bookTicket")
-    public ResponseDataDTO bookTicket(
+    public ResponseEntity<ResponseDataDTO> bookTicket(
             @RequestParam String trainPrn,
             @RequestParam String source,
             @RequestParam String destination,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfTravel,
             @RequestParam int numberOfSeatsToBeBooked){
-        return service.bookTicket(trainPrn,source,destination,dateOfTravel,numberOfSeatsToBeBooked);
+        return ResponseEntity.ok(
+                service.bookTicket(trainPrn, source, destination, dateOfTravel, numberOfSeatsToBeBooked));
     }
     @GetMapping("/fetchTickets")
-    public ResponseDataDTO fetchAllTickets(){
-        return service.fetchAllTickets();
+    public ResponseEntity<ResponseDataDTO> fetchAllTickets(){
+        return ResponseEntity.ok(service.fetchAllTickets());
     }
 
     @PostMapping("/cancelTicket")
-    public ResponseDataDTO cancelTicket(@RequestParam String ticketId){
-        return service.cancelTicket(ticketId);
+    public ResponseEntity<ResponseDataDTO> cancelTicket(@RequestParam String ticketId){
+        return ResponseEntity.ok(service.cancelTicket(ticketId));
     }
     @GetMapping("/fetchTicketById")
-    public ResponseDataDTO fetchTicketById(@RequestParam String ticketId){
-        return service.fetchTicketById(ticketId);
+    public ResponseEntity<ResponseDataDTO> fetchTicketById(@RequestParam String ticketId){
+        return ResponseEntity.ok(service.fetchTicketById(ticketId));
     }
 
     @PostMapping("/rescheduleTicket")
-    public ResponseDataDTO rescheduleTicket(
+    public ResponseEntity<ResponseDataDTO> rescheduleTicket(
             @RequestParam String ticketId,
             @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate updatedDateOfTravel){
-        return service.rescheduleTicket(ticketId,updatedDateOfTravel);
+        return ResponseEntity.ok(service.rescheduleTicket(ticketId, updatedDateOfTravel));
     }
 }
