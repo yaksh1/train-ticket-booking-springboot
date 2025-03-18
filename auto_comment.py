@@ -23,74 +23,90 @@ client = ChatCompletionsClient(
 
 def generate_commented_code(java_code):
     """ Sends the Java file to AI and retrieves only the commented version, ensuring no extra text. """
-    prompt = f"""
-    You are an expert Java developer. Your task is to add meaningful comments to the given Java code. 
-    - Use JavaDoc-style comments for class and method documentation.
-    - Use inline comments to explain important logic.
-    - Do NOT modify or rewrite the logic of the code.
-    - DO NOT stop in between the code and ALWAYS provide the whole code in the file
-    - IF you are NOT able to process the whole file make sure you return the file unchanged
-    - Do NOT add any explanations, summaries, or unnecessary text outside the comments.
-    - Return ONLY the modified Java code with comments added, without any extra formatting or explanations.
-    - Do NOT wrap the output in triple backticks or any other formatting markers.
+    try:
+        prompt = f"""
+        You are an expert Java developer. Your task is to add meaningful comments to the given Java code. 
+        - Use JavaDoc-style comments for class and method documentation.
+        - Use inline comments to explain important logic.
+        - Do NOT modify or rewrite the logic of the code.
+        - DO NOT stop in between the code and ALWAYS provide the whole code in the file
+        - IF you are NOT able to process the whole file make sure you return the file unchanged
+        - Do NOT add any explanations, summaries, or unnecessary text outside the comments.
+        - Return ONLY the modified Java code with comments added, without any extra formatting or explanations.
+        - Do NOT wrap the output in triple backticks or any other formatting markers.
 
-    Java Code:
-    {java_code}
-    """
+        Java Code:
+        {java_code}
+        """
 
-    response = client.complete(
-        messages=[
-            SystemMessage("You are an expert Java developer who writes professional and meaningful comments."),
-            UserMessage(prompt),
-        ],
-        model="gpt-4o",
-        temperature=0.5,
-        max_tokens=4096,
-        top_p=1
-    )
+        response = client.complete(
+            messages=[
+                SystemMessage("You are an expert Java developer who writes professional and meaningful comments."),
+                UserMessage(prompt),
+            ],
+            model="gpt-4o",
+            temperature=0.5,
+            max_tokens=4096,
+            top_p=1
+        )
 
-    commented_code = response.choices[0].message.content.strip()
+        commented_code = response.choices[0].message.content.strip()
 
-    # Remove any triple backticks and potential "java" syntax markers added by the AI
-    commented_code = re.sub(r"^```java\s*", "", commented_code)  # Remove leading ```java
-    commented_code = re.sub(r"\s*```$", "", commented_code)  # Remove trailing ```
+        # Remove any triple backticks and potential "java" syntax markers added by the AI
+        commented_code = re.sub(r"^```java\s*", "", commented_code)  # Remove leading ```java
+        commented_code = re.sub(r"\s*```$", "", commented_code)  # Remove trailing ```
 
-    return commented_code
+        return commented_code
+
+    except Exception as e:
+        print(f"Error processing code with AI: {e}")
+        return None  # Return None if an error occurs
 
 def process_java_file(file_path):
     """ Reads the entire Java file, sends it to AI, and writes back only the commented version. """
-    with open(file_path, "r") as file:
-        java_code = file.read()
+    try:
+        with open(file_path, "r") as file:
+            java_code = file.read()
 
-    print(f"Processing file: {file_path}")
+        print(f"Processing file: {file_path}")
 
-    commented_code = generate_commented_code(java_code)
+        commented_code = generate_commented_code(java_code)
 
-    # Ensure no AI explanations are mistakenly included
-    unwanted_text_patterns = [
-        "### Explanation",  
-        "This rewritten version",  
-        "Improvements made",  
-        "Enhancements:",  
-    ]
-    
-    for pattern in unwanted_text_patterns:
-        if pattern in commented_code:
-            commented_code = commented_code.split(pattern, 1)[0].strip()  # Remove any unwanted explanations
+        if not commented_code:
+            print(f"Skipping {file_path} due to an error in AI processing.")
+            return  # Skip this file and continue with others
 
-    with open(file_path, "w") as file:
-        file.write(commented_code)
+        # Ensure no AI explanations are mistakenly included
+        unwanted_text_patterns = [
+            "### Explanation",  
+            "This rewritten version",  
+            "Improvements made",  
+            "Enhancements:",  
+        ]
+        
+        for pattern in unwanted_text_patterns:
+            if pattern in commented_code:
+                commented_code = commented_code.split(pattern, 1)[0].strip()  # Remove any unwanted explanations
 
-    print(f"Updated {file_path} with AI-generated comments, without unnecessary explanations or formatting.")
+        with open(file_path, "w") as file:
+            file.write(commented_code)
+
+        print(f"Updated {file_path} with AI-generated comments, without unnecessary explanations or formatting.")
+
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
+        print(f"Skipping {file_path} due to an error.")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python auto_comment.py <JavaFile.java>")
+    if len(sys.argv) < 2:
+        print("Usage: python auto_comment.py <JavaFile1.java> [JavaFile2.java] ...")
         sys.exit(1)
 
-    java_file = sys.argv[1]
-    if not os.path.exists(java_file):
-        print(f"Error: {java_file} not found.")
-        sys.exit(1)
+    for java_file in sys.argv[1:]:
+        if not os.path.exists(java_file):
+            print(f"Skipping {java_file}: File not found.")
+            continue  # Skip non-existent files
 
-    process_java_file(java_file)
+        process_java_file(java_file)
+
+    print("Processing completed for all Java files.")
