@@ -6,7 +6,6 @@ import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.UserRepositoryV2;
-import com.yaksh.train_ticket.util.HelperFunctions;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +107,7 @@ public class UserBookingServiceImpl implements UserBookingService {
         }
 
         // if date selected is in the past
-        if (HelperFunctions.isDateInThePast(dateOfTravel)) {
+        if (dateOfTravel.isBefore(LocalDate.now())){
             return CommonResponsesDTOs.dateIsInThePastDTO();
         }
 
@@ -132,7 +131,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             return availableSeatsDTO;
         }
 
-        List<List<Integer>> allSeats = train.getSeats().get(HelperFunctions.localDateToString(dateOfTravel));
+        List<List<Integer>> allSeats = train.getSeats().get(dateOfTravel.toString());
 
         List<List<Integer>> availableSeatsList;
         Object data = availableSeatsDTO.getData();
@@ -266,7 +265,7 @@ public class UserBookingServiceImpl implements UserBookingService {
             log.warn("Unauthorized ticket rescheduling attempt - no logged in user");
             return CommonResponsesDTOs.userNotLoggedInDTO();
         }
-        if (HelperFunctions.isDateInThePast(updatedTravelDate)) {
+        if (updatedTravelDate.isBefore(LocalDate.now())) {
             return CommonResponsesDTOs.dateIsInThePastDTO();
         }
         Ticket ticketFound = ticketService.findTicketById(ticketId).orElse(null);

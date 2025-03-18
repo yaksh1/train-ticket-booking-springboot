@@ -7,7 +7,6 @@ import com.yaksh.train_ticket.enums.ResponseStatus;
 import com.yaksh.train_ticket.model.StationSchedule;
 import com.yaksh.train_ticket.model.Train;
 import com.yaksh.train_ticket.repository.TrainRepositoryV2;
-import com.yaksh.train_ticket.util.HelperFunctions;
 import com.yaksh.train_ticket.util.TrainServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -174,7 +173,7 @@ public class TrainServiceImpl implements TrainService {
         if (train == null) {
             return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
         }
-        return new ResponseDataDTO(true, String.format("Schedule of train %s fetched successfully", trainPrn), train.getSchedules().get(HelperFunctions.localDateToString(travelDate)));
+        return new ResponseDataDTO(true, String.format("Schedule of train %s fetched successfully", trainPrn), train.getSchedules().get(travelDate.toString()));
     }
 
     /**
@@ -190,7 +189,7 @@ public class TrainServiceImpl implements TrainService {
         if (train == null) {
             return CommonResponsesDTOs.trainDoesNotExistDTO(trainPrn);
         }
-        return new ResponseDataDTO(true, String.format("Seats of train %s fetched successfully", trainPrn), train.getSeats().get(HelperFunctions.localDateToString(travelDate)));
+        return new ResponseDataDTO(true, String.format("Seats of train %s fetched successfully", trainPrn), train.getSeats().get(travelDate.toString()));
     }
 
     /**
@@ -272,7 +271,7 @@ public class TrainServiceImpl implements TrainService {
     @Override
     public ResponseDataDTO areSeatsAvailable(Train train, int numberOfSeatsToBeBooked, LocalDate travelDate) {
         log.info("Checking seat availability for train {}: {} seats requested", train.getPrn(), numberOfSeatsToBeBooked);
-        List<List<Integer>> allSeats = train.getSeats().get(HelperFunctions.localDateToString(travelDate));
+        List<List<Integer>> allSeats = train.getSeats().get(travelDate.toString());
         List<List<Integer>> availableSeats = new ArrayList<>();
 
         int totalSeats = allSeats.size() * allSeats.get(0).size(); // Total number of seats

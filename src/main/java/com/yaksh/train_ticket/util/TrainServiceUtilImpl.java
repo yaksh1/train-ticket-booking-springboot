@@ -16,7 +16,7 @@ import java.util.List;
 public class TrainServiceUtilImpl implements TrainServiceUtil {
     @Override
     public boolean validTrain(String source, String destination, LocalDate travelDate, Train train) {
-        List<StationSchedule> schedules = train.getSchedules().get(HelperFunctions.localDateToString(travelDate));
+        List<StationSchedule> schedules = train.getSchedules().get(travelDate.toString());
         if(schedules==null){
             return false;
         }
