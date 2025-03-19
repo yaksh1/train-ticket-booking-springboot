@@ -37,7 +37,7 @@ public class TrainServiceImpl implements TrainService {
         try {
             // Check if a train with the same PRN already exists
             if (trainServiceUtil.doesTrainExist(newTrain.getPrn(), trainRepositoryV2)) {
-                throw new CustomException( ResponseStatus.TRAIN_ALREADY_EXISTS);
+                throw new CustomException(ResponseStatus.TRAIN_ALREADY_EXISTS);
             }
 
             // Save the new train to the repository

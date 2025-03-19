@@ -6,7 +6,7 @@ import com.yaksh.train_ticket.service.UserBookingService;
 import com.yaksh.train_ticket.util.UserServiceUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mindrot.jbcrypt.BCrypt;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

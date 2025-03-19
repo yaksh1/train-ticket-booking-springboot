@@ -30,8 +30,6 @@ public class Train {
     private Map<String,List<List<Integer>>> seats;
     @Field("schedules")
     private Map<String, List<StationSchedule>> schedules;
-//    private Map<String, LocalDateTime> stationArrivalTimes;
-//    private List<String> stations;
 
     public String getTrainInfo(){
         return String.format("Train ID: %s",prn);

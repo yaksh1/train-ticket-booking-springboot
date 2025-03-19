@@ -48,6 +48,7 @@ public class TrainController {
     @PostMapping("/addTrain")
     public ResponseEntity<ResponseDataDTO> addTrain(@RequestBody Train newTrain) {
         // Delegates the add train logic to the trainService and returns the response
+        log.info(newTrain.toString());
         return ResponseEntity.ok(trainService.addTrain(newTrain));
     }
 

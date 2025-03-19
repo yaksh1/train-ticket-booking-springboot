@@ -38,3 +38,4 @@ out/
 .qodo/
 # Ignore .env file
 .env
+.qodo

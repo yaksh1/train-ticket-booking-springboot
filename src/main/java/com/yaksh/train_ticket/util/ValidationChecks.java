@@ -46,7 +46,7 @@ public class ValidationChecks {
     Pattern pattern = Pattern.compile(email_regex);
 
     // Check if the email is not null and matches the regex pattern
-    return email != null && pattern.matcher(email).matches();
+    return email != null && pattern.matcher(email.toLowerCase()).matches();
   }
 
   /**

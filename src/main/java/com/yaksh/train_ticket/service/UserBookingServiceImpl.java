@@ -79,7 +79,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     public ResponseDataDTO loginUser(String userEmail, String password) {
         log.info("Login attempt for user: {}", userEmail);
         // check if email is valid
-        if (!validationChecks.isValidEmail(userEmail)) {
+        if (!validationChecks.isValidEmail(userEmail.toLowerCase())) {
             log.warn("Signup failed - email is not valid: {}", userEmail);
             throw new CustomException(ResponseStatus.EMAIL_NOT_VALID);
         }
