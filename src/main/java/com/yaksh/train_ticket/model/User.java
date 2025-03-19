@@ -23,7 +23,7 @@ import java.util.List;
 public class User {
     @Id
     private String userId;
-    private String userName;
+    private String userEmail;
     private String hashedPassword;
     @DocumentReference
     private List<Ticket> ticketsBooked;

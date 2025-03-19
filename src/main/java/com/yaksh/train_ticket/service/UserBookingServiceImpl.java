@@ -28,6 +28,7 @@ import java.util.*;
 public class UserBookingServiceImpl implements UserBookingService {
     private User loggedInUser; // Currently logged-in user
     private final UserServiceUtil userServiceUtil;
+    private final ValidationChecks validationChecks;
     private final UserRepositoryV2 userRepositoryV2;
 
     // Dependencies for ticket and train services
@@ -42,7 +43,7 @@ public class UserBookingServiceImpl implements UserBookingService {
     @Override
     public void setLoggedInUser(User user) {
         this.loggedInUser = user;
-        log.info("User logged in as: {}", user.getUserName());
+        log.info("User logged in as: {}", user.getUserEmail());
     }
 
     /**
@@ -70,14 +71,19 @@ public class UserBookingServiceImpl implements UserBookingService {
     /**
      * Logs in a user with the provided username and password.
      *
-     * @param userName The username of the user.
+     * @param userEmail The username of the user.
      * @param password The password of the user.
      * @return ResponseDataDTO containing login result.
      */
     @Override
-    public ResponseDataDTO loginUser(String userName, String password) {
-        log.info("Login attempt for user: {}", userName);
-        return userRepositoryV2.findByUserName(userName.toLowerCase())
+    public ResponseDataDTO loginUser(String userEmail, String password) {
+        log.info("Login attempt for user: {}", userEmail);
+        // check if email is valid
+        if (!validationChecks.isValidEmail(userEmail)) {
+            log.warn("Signup failed - email is not valid: {}", userEmail);
+            throw new CustomException(ResponseStatus.EMAIL_NOT_VALID);
+        }
+        return userRepositoryV2.findByUserEmail(userEmail.toLowerCase())
                 .map(user -> {
                     if (!userServiceUtil.checkPassword(password, user.getHashedPassword())) {
                         throw new CustomException(ResponseStatus.PASSWORD_INCORRECT);
@@ -90,22 +96,26 @@ public class UserBookingServiceImpl implements UserBookingService {
     /**
      * Signs up a new user with the provided username and password.
      *
-     * @param userName The username of the new user.
+     * @param userEmail The username of the new user.
      * @param password The password of the new user.
      * @return ResponseDataDTO containing signup result.
      */
     @Override
-    public ResponseDataDTO signupUser(String userName, String password) {
-        log.info("Signup attempt for user: {}", userName);
-
+    public ResponseDataDTO signupUser(String userEmail, String password) {
+        log.info("Signup attempt for user: {}", userEmail);
+        // check if email is valid
+        if (!validationChecks.isValidEmail(userEmail)) {
+            log.warn("Signup failed - email is not valid: {}", userEmail);
+            throw new CustomException(ResponseStatus.EMAIL_NOT_VALID);
+        }
         // Check if the user already exists
-        if (!ValidationChecks.isUserPresent(userName)) {
-            log.warn("Signup failed - user already exists: {}", userName);
+        if (validationChecks.isUserPresent(userEmail)) {
+            log.warn("Signup failed - user already exists: {}", userEmail);
             throw new CustomException(ResponseStatus.USER_ALREADY_EXISTS);
         }
         try {
             // Create a new user and hash the password
-            User user = new User(UUID.randomUUID().toString(), userName,
+            User user = new User(UUID.randomUUID().toString(), userEmail,
                     userServiceUtil.hashPassword(password), new ArrayList<>());
 
             // Save the user in the repository

@@ -33,13 +33,13 @@ public class UserController {
      * Logs in the user by verifying the provided username and password.
      * If login is successful, sets the logged-in user in the service layer.
      *
-     * @param userName The username of the user trying to log in.
+     * @param userEmail The username of the user trying to log in.
      * @param password The password of the user trying to log in.
      * @return ResponseEntity containing the login status and user information.
      */
     @PostMapping("/loginUser")
-    public ResponseEntity<ResponseDataDTO> loginUser(@RequestParam String userName, @RequestParam String password) {
-        ResponseDataDTO responseDataDTO = service.loginUser(userName, password);
+    public ResponseEntity<ResponseDataDTO> loginUser(@RequestParam String userEmail, @RequestParam String password) {
+        ResponseDataDTO responseDataDTO = service.loginUser(userEmail, password);
 
         // If login is successful, set the logged-in user in the service layer
         if (responseDataDTO.isStatus()) {
@@ -51,13 +51,13 @@ public class UserController {
     /**
      * Signs up a new user with the provided username and password.
      *
-     * @param userName The username of the user to be registered.
+     * @param userEmail The username of the user to be registered.
      * @param password The password for the new user.
      * @return ResponseEntity containing the signup status.
      */
     @PostMapping("/signupUser")
-    public ResponseEntity<ResponseDataDTO> signupUser(@RequestParam String userName, @RequestParam String password) {
-        return ResponseEntity.ok(service.signupUser(userName, password));
+    public ResponseEntity<ResponseDataDTO> signupUser(@RequestParam String userEmail, @RequestParam String password) {
+        return ResponseEntity.ok(service.signupUser(userEmail, password));
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.yaksh.train_ticket.util;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.yaksh.train_ticket.model.User;
 import com.yaksh.train_ticket.repository.UserRepositoryV2;
@@ -20,17 +19,17 @@ import java.util.regex.Pattern;
 public class ValidationChecks {
 
   // Repository for accessing user data
-  private static UserRepositoryV2 userRepositoryV2;
+  private final UserRepositoryV2 userRepositoryV2;
 
   /**
    * Checks if a user is already present in the system with the given username.
    *
-   * @param userName the username to check
+   * @param userEmail the userEmail to check
    * @return true if the user exists, false otherwise
    */
-  public static boolean isUserPresent(String userName) {
+  public boolean isUserPresent(String userEmail) {
     // Checking if a user with the given username exists in the database
-    Optional<User> userFound = userRepositoryV2.findByUserName(userName.toLowerCase());
+    Optional<User> userFound = userRepositoryV2.findByUserEmail(userEmail.toLowerCase());
     // Return true if the user exists, otherwise false
     return userFound.isPresent();
   }

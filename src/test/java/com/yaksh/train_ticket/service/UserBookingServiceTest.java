@@ -42,7 +42,7 @@ public class UserBookingServiceTest {
         private User mockUser;
         private Ticket mockTicket;
         private Train mockTrain;
-        private final String userName = "user1";
+        private final String userEmail = "user1";
         private final String password = "securePassword";
         private final String hashedPassword = "hashedPassword";
         private final String trainPrn = "train123";
@@ -56,7 +56,7 @@ public class UserBookingServiceTest {
                 // Setup mock user
                 mockUser = User.builder()
                                 .userId(UUID.randomUUID().toString())
-                                .userName(userName)
+                                .userEmail(userEmail)
                                 .hashedPassword(hashedPassword)
                                 .ticketsBooked(new ArrayList<>())
                                 .build();
@@ -83,7 +83,7 @@ public class UserBookingServiceTest {
                 // in setup method)
 
                 // Mock behavior: Simulate that no user exists with the given username.
-                when(userRepositoryV2.findByUserName(userName.toLowerCase())).thenReturn(Optional.empty());
+                when(userRepositoryV2.findByUserEmail(userEmail.toLowerCase())).thenReturn(Optional.empty());
 
                 // Mock behavior: Simulate password hashing.
                 when(userServiceUtil.hashPassword(password)).thenReturn(hashedPassword);
@@ -94,7 +94,7 @@ public class UserBookingServiceTest {
                 when(userRepositoryV2.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
                 // Act - Call the actual method under test
-                ResponseDataDTO response = userBookingService.signupUser(userName, password);
+                ResponseDataDTO response = userBookingService.signupUser(userEmail, password);
 
                 // Assert - Validate the expected outcome
                 Assertions.assertThat(response.isStatus()).isTrue(); // Ensures the signup was successful
@@ -103,8 +103,8 @@ public class UserBookingServiceTest {
                 // Verify that the mocked dependencies were called the expected number of times
                 // with the correct parameters
 
-                // Ensures that `findByUserName` was called once with the lowercase username
-                verify(userRepositoryV2, times(1)).findByUserName(userName.toLowerCase());
+                // Ensures that `findByUserEmail()` was called once with the lowercase username
+                verify(userRepositoryV2, times(1)).findByUserEmail(userEmail.toLowerCase());
 
                 // Ensures that `hashPassword` was called once with the provided password
                 verify(userServiceUtil, times(1)).hashPassword(password);
@@ -117,16 +117,16 @@ public class UserBookingServiceTest {
         public void userBookingService_signUpUser_userAlreadyExists() {
                 // Arrange
 
-                when(userRepositoryV2.findByUserName(userName.toLowerCase())).thenReturn(Optional.of(new User()));
+                when(userRepositoryV2.findByUserEmail(userEmail.toLowerCase())).thenReturn(Optional.of(new User()));
 
                 // Act
-                ResponseDataDTO response = userBookingService.signupUser(userName, password);
+                ResponseDataDTO response = userBookingService.signupUser(userEmail, password);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
                 Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.USER_ALREADY_EXISTS);
 
-                verify(userRepositoryV2, times(1)).findByUserName(userName.toLowerCase());
+                verify(userRepositoryV2, times(1)).findByUserEmail(userEmail.toLowerCase());
                 verify(userRepositoryV2, never()).save(any(User.class));
         }
 
@@ -134,13 +134,13 @@ public class UserBookingServiceTest {
         public void userBookingService_signUpUser_exceptionWhenSaving() {
                 // Arrange
 
-                when(userRepositoryV2.findByUserName(userName.toLowerCase())).thenReturn(Optional.empty());
+                when(userRepositoryV2.findByUserEmail(userEmail.toLowerCase())).thenReturn(Optional.empty());
                 when(userServiceUtil.hashPassword(password)).thenReturn(hashedPassword);
                 // simulate exception
                 when(userRepositoryV2.save(any(User.class)))
                                 .thenThrow(new RuntimeException("Database error"));
                 // Act
-                ResponseDataDTO response = userBookingService.signupUser(userName, password);
+                ResponseDataDTO response = userBookingService.signupUser(userEmail, password);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
@@ -148,7 +148,7 @@ public class UserBookingServiceTest {
                                 .isEqualTo(ResponseStatus.USER_NOT_SAVED_IN_COLLECTION);
 
                 // Verify interactions
-                verify(userRepositoryV2).findByUserName(userName.toLowerCase());
+                verify(userRepositoryV2).findByUserEmail(userEmail.toLowerCase());
                 verify(userServiceUtil).hashPassword(password);
                 verify(userRepositoryV2).save(any(User.class));
         }
@@ -157,18 +157,18 @@ public class UserBookingServiceTest {
         public void userBookingService_loginUser_success() {
                 // Arrange
 
-                when(userRepositoryV2.findByUserName(userName.toLowerCase()))
+                when(userRepositoryV2.findByUserEmail(userEmail.toLowerCase()))
                                 .thenReturn(Optional.of(mockUser));
                 when(userServiceUtil.checkPassword(password, hashedPassword)).thenReturn(true);
 
                 // Act
-                ResponseDataDTO response = userBookingService.loginUser(userName, password);
+                ResponseDataDTO response = userBookingService.loginUser(userEmail, password);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isTrue();
                 Assertions.assertThat(response.getData()).isInstanceOf(User.class);
 
-                verify(userRepositoryV2, times(1)).findByUserName(userName.toLowerCase());
+                verify(userRepositoryV2, times(1)).findByUserEmail(userEmail.toLowerCase());
                 verify(userServiceUtil, times(1)).checkPassword(password, hashedPassword);
         }
 
@@ -176,18 +176,18 @@ public class UserBookingServiceTest {
         public void userBookingService_loginUser_incorrectPassword() {
                 // Arrange
 
-                when(userRepositoryV2.findByUserName(userName.toLowerCase()))
+                when(userRepositoryV2.findByUserEmail(userEmail.toLowerCase()))
                                 .thenReturn(Optional.of(mockUser));
                 when(userServiceUtil.checkPassword(password, hashedPassword)).thenReturn(false);
 
                 // Act
-                ResponseDataDTO response = userBookingService.loginUser(userName, password);
+                ResponseDataDTO response = userBookingService.loginUser(userEmail, password);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
                 Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.PASSWORD_INCORRECT);
 
-                verify(userRepositoryV2, times(1)).findByUserName(userName.toLowerCase());
+                verify(userRepositoryV2, times(1)).findByUserEmail(userEmail.toLowerCase());
                 verify(userServiceUtil, times(1)).checkPassword(password, hashedPassword);
         }
 
@@ -195,17 +195,17 @@ public class UserBookingServiceTest {
         public void userBookingService_loginUser_userNotFound() {
                 // Arrange
 
-                when(userRepositoryV2.findByUserName(userName.toLowerCase()))
+                when(userRepositoryV2.findByUserEmail(userEmail.toLowerCase()))
                                 .thenReturn(Optional.empty());
 
                 // Act
-                ResponseDataDTO response = userBookingService.loginUser(userName, password);
+                ResponseDataDTO response = userBookingService.loginUser(userEmail, password);
 
                 // Assert
                 Assertions.assertThat(response.isStatus()).isFalse();
                 Assertions.assertThat(response.getResponseStatus()).isEqualTo(ResponseStatus.USER_NOT_FOUND);
 
-                verify(userRepositoryV2, times(1)).findByUserName(userName.toLowerCase());
+                verify(userRepositoryV2, times(1)).findByUserEmail(userEmail.toLowerCase());
                 verify(userServiceUtil, never()).checkPassword(password, hashedPassword);
         }
 

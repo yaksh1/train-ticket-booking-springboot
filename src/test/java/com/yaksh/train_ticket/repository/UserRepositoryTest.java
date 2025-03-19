@@ -2,7 +2,6 @@ package com.yaksh.train_ticket.repository;
 
 import com.yaksh.train_ticket.model.Ticket;
 import com.yaksh.train_ticket.model.User;
-import com.yaksh.train_ticket.repository.UserRepositoryV2;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ public class UserRepositoryTest {
         // Arrange
         User user = User.builder()
                 .userId(UUID.randomUUID().toString())
-                .userName("test username")
+                .userEmail("test username")
                 .hashedPassword("hashedPassword")
                 .ticketsBooked(new ArrayList<>())
                 .build();
@@ -40,7 +39,7 @@ public class UserRepositoryTest {
         //Assert
         Assertions.assertThat(savedUser).isNotNull();
         Assertions.assertThat(savedUser.getUserId()).isNotBlank();
-        Assertions.assertThat(savedUser.getUserName()).isEqualTo("test username");
+        Assertions.assertThat(savedUser.getUserEmail()).isEqualTo("test username");
     }
 
     @Test
@@ -48,13 +47,13 @@ public class UserRepositoryTest {
         // Arrange
         User user1 = User.builder()
                 .userId(UUID.randomUUID().toString())
-                .userName("user1")
+                .userEmail("user1")
                 .hashedPassword("hashedPassword")
                 .ticketsBooked(new ArrayList<>())
                 .build();
         User user2 = User.builder()
                 .userId(UUID.randomUUID().toString())
-                .userName("user2")
+                .userEmail("user2")
                 .hashedPassword("hashedPassword")
                 .ticketsBooked(new ArrayList<>())
                 .build();
@@ -70,22 +69,22 @@ public class UserRepositoryTest {
     }
 
     @Test
-    public void userRepository_findByUserName_success(){
+    public void userRepository_findByUserEmail_success(){
         // Arrange
         User user1 = User.builder()
                 .userId(UUID.randomUUID().toString())
-                .userName("user1")
+                .userEmail("user1")
                 .hashedPassword("hashedPassword")
                 .ticketsBooked(new ArrayList<>())
                 .build();
         userRepositoryV2.save(user1);
 
         // Act
-        Optional<User> userFound = userRepositoryV2.findByUserName(user1.getUserName());
+        Optional<User> userFound = userRepositoryV2.findByUserEmail(user1.getUserEmail());
 
         // Assert
         Assertions.assertThat(userFound).isPresent();
-        Assertions.assertThat(userFound.get().getUserName()).isEqualTo("user1");
+        Assertions.assertThat(userFound.get().getUserEmail()).isEqualTo("user1");
     }
 
     @Test
@@ -93,7 +92,7 @@ public class UserRepositoryTest {
         // Arrange
         User user1 = User.builder()
                 .userId(UUID.randomUUID().toString())
-                .userName("user1")
+                .userEmail("user1")
                 .hashedPassword("hashedPassword")
                 .ticketsBooked(new ArrayList<>())
                 .build();
@@ -108,7 +107,7 @@ public class UserRepositoryTest {
                 .build();
 
         // retrieve the user and book the ticket
-        Optional<User> savedUserOptional = userRepositoryV2.findByUserName(user1.getUserName());
+        Optional<User> savedUserOptional = userRepositoryV2.findByUserEmail(user1.getUserEmail());
         Assertions.assertThat(savedUserOptional).isPresent();
 
         User savedUser = savedUserOptional.get();
