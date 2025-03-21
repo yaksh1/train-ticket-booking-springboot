@@ -351,19 +351,30 @@ public class UserBookingServiceImpl implements UserBookingService {
             throw new CustomException(String.format("Ticket ID: %s not found", ticketId),
                     ResponseStatus.TICKET_NOT_FOUND);
         }
+        
+        // free the booked seats
+        List<List<Integer>> bookedSeats = ticketFound.getBookedSeatsIndex();
+        Train train = trainService.findTrainByPrn(ticketFound.getTrainId()).orElse(null);
+        log.info("Booked seats before freeing: {}", bookedSeats.toString());
+        trainService.freeTheBookedSeats(bookedSeats, train, ticketFound.getDateOfTravel());
+        log.info("Seats successfully freed, saving data...");
+
+        // Update the train in the database
+        trainService.updateTrain(train);
 
         // Check if the train can be booked for the new date
-        trainService.canBeBooked(ticketFound.getTrainId(), ticketFound.getSource(),
-                ticketFound.getDestination(), updatedTravelDate);
+        Ticket newTicket = (Ticket) this.bookTicket(ticketFound.getTrainId(),ticketFound.getSource(),
+                ticketFound.getDestination(), updatedTravelDate, ticketFound.getBookedSeatsIndex().size()).getData();
+       
 
         // Update the ticket's travel date
         log.info("Updating the travel date in the ticket: {}", updatedTravelDate);
-        ticketFound.setDateOfTravel(updatedTravelDate);
+        newTicket.setTicketId(ticketFound.getTicketId());
 
         // Save the updated ticket in the database
         log.info("Saving the ticket in the database");
-        ticketService.saveTicket(ticketFound);
-
+        ticketService.deleteTicketById(ticketId);
+        ticketService.saveTicket(newTicket);
         return new ResponseDataDTO(true, "Travel date updated successfully");
     }
 }
