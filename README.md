@@ -3,18 +3,16 @@
 A comprehensive train ticket booking platform built with Spring Boot backend and React frontend, designed for Indian railway travelers. The system provides end-to-end functionality for ticket booking, user management, and train administration.
 
 ## 📋 Table of Contents
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [API Documentation](#api-documentation)
-- [Architecture](#architecture)
-- [Docker Deployment](#docker-deployment)
-- [Error Handling](#error-handling)
-- [Contributing](#contributing)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [API Documentation](#-api-documentation)
+- [Architecture](#-architecture)
+- [Docker Deployment](#-docker-deployment)
+- [Error Handling](#-error-handling)
+- [Contributing](#-contributing)
 
-## ✨ Features
+## Features
 
 ### 👤 User Management
 - User registration and authentication
@@ -41,7 +39,7 @@ A comprehensive train ticket booking platform built with Spring Boot backend and
 - Schedule and capacity management
 - Real-time availability updates
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Backend
 - **Framework**: Spring Boot
@@ -50,7 +48,7 @@ A comprehensive train ticket booking platform built with Spring Boot backend and
 - **API**: RESTful architecture
 - **Documentation**: JavaDoc
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Java 11 or higher
@@ -74,7 +72,7 @@ docker-compose up -d
 
 The application will be available at `http://localhost:8080`
 
-## 🔌 API Documentation
+## API Documentation
 
 ### User Endpoints
 
@@ -96,7 +94,7 @@ The application will be available at `http://localhost:8080`
 | `/v1/train/updateTrain` | POST | Modify train details |
 | `/v1/train/addMultipleTrains` | POST | Bulk train creation |
 
-## 🏗 Architecture
+## Architecture
 
 The application follows a monolithic architecture with:
 - RESTful API design
@@ -104,7 +102,7 @@ The application follows a monolithic architecture with:
 - Data persistence with MongoDB
 - Containerized deployment using Docker
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 The application is containerized using Docker and can be easily deployed using Docker Compose. The configuration includes:
 - MongoDB container for database
@@ -113,7 +111,7 @@ The application is containerized using Docker and can be easily deployed using D
 - Volume persistence for database data
 - Internal network for service communication
 
-## ⚠️ Error Management
+## Error Management
 
 The system implements comprehensive error handling through:
 - Custom exception handling
@@ -123,7 +121,7 @@ The system implements comprehensive error handling through:
 - System state validation
 - User input verification
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
